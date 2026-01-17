@@ -1,0 +1,73 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Frontend (Node.js)
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/.env.*.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.pnp
+frontend/.pnp.js
+frontend/coverage/
+frontend/.cache/
+
+# Vite
+frontend/.vite/
+
+# Backend (Laravel)
+backend/.env
+backend/.env.*.local
+backend/vendor/
+backend/node_modules/
+backend/npm-debug.log
+backend/yarn-error.log
+backend/bootstrap/cache/
+backend/storage/logs/
+backend/storage/app/
+backend/public/storage/
+backend/.htaccess
+backend/Homestead.json
+backend/Homestead.yaml
+backend/npm-debug.log*
+backend/yarn-debug.log*
+backend/yarn-error.log*
+
+# Database
+*.sqlite
+*.sqlite3
+backend/database/*.sqlite*
+
+# Compiled PHP
+backend/storage/framework/sessions/*
+backend/storage/framework/cache/*
+backend/storage/framework/views/*
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+.env.backup
+*.bak
+
+# Build artifacts
+dist/
+build/
+out/
+
+# Package managers
+package-lock.json
+composer.lock

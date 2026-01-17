@@ -19,29 +19,72 @@ NoslDarbs/
 │   ├── src/
 │   │   ├── components/         # Reusable Vue components
 │   │   ├── views/              # Page components (Home, Cards, Play, etc.)
-│   │   ├── services/           # API client services
+│   │   │   ├── Home.vue        # Landing page with hero section
+│   │   │   ├── Cards.vue       # Card collection browser
+│   │   │   ├── Play.vue        # Battle arena
+│   │   │   └── Profile.vue     # User profile
+│   │   ├── services/           # API client (api.js with Axios)
+│   │   ├── stores/             # Pinia state management (auth.js)
+│   │   ├── router/             # Vue Router configuration
 │   │   ├── App.vue
-│   │   └── main.js
-│   ├── public/
+│   │   └── main.js             # Entry point with Vuetify setup
+│   ├── index.html
 │   ├── package.json
 │   └── vite.config.js
 ├── backend/                     # Laravel API
 │   ├── app/
 │   │   ├── Http/Controllers/   # API Controllers
-│   │   ├── Models/             # Database Models
-│   │   └── Resources/          # API Resources
+│   │   │   └── Api/
+│   │   │       ├── AuthController.php
+│   │   │       ├── CardController.php
+│   │   │       └── DeckController.php
+│   │   └── Models/             # Eloquent Models
+│   │       ├── User.php
+│   │       ├── Card.php
+│   │       ├── Deck.php
+│   │       └── Battle.php
 │   ├── database/
-│   │   ├── migrations/
-│   │   └── seeders/
+│   │   └── migrations/         # 6 database tables
 │   ├── routes/
-│   │   └── api.php             # API Routes
+│   │   └── api.php             # API Routes (12+ endpoints)
 │   ├── .env.example
 │   └── composer.json
 ├── .gitignore
 └── README.md
 ```
 
-## 🛠️ Tech Stack
+## � Quick Start
+
+### Prerequisites
+- Node.js 16+ and npm
+- PHP 8.1+
+- Composer
+- MySQL 5.7+
+- Git
+
+### Frontend Setup (5 minutes)
+```bash
+cd frontend
+npm install
+cp .env.example .env.local
+npm run dev  # Runs on http://localhost:5173
+```
+
+### Backend Setup (5 minutes)
+```bash
+cd backend
+composer install
+cp .env.example .env
+php artisan key:generate
+
+# Create database: CREATE DATABASE nosldarbs;
+# Update DB credentials in .env
+
+php artisan migrate          # Create tables
+php artisan serve           # Runs on http://localhost:8000
+```
+
+## �🛠️ Tech Stack
 
 ### Frontend
 - **Vue.js 3** - Progressive JavaScript framework
@@ -166,7 +209,41 @@ The backend API will be available at `http://localhost:8000/api`
 - `battles` - Battle history and results
 - `achievements` - Player achievements
 
-## 🔌 API Endpoints
+## �️ Database Schema
+
+### Users Table
+```sql
+id, name, email, password, level, experience, created_at, updated_at
+```
+
+### Cards Table
+```sql
+id, name, description, power, cost, element, rarity, image_url, created_at, updated_at
+```
+
+### User Cards (Collection)
+```sql
+id, user_id (FK), card_id (FK), quantity, created_at, updated_at
+```
+
+### Decks Table
+```sql
+id, user_id (FK), name, description, created_at, updated_at
+```
+
+### Deck Cards
+```sql
+id, deck_id (FK), card_id (FK), quantity, created_at, updated_at
+```
+
+### Battles Table
+```sql
+id, player1_id (FK), player2_id (FK), winner_id (FK), status, started_at, ended_at, created_at, updated_at
+```
+
+All migrations are ready in `backend/database/migrations/`
+
+## �🔌 API Endpoints
 
 ### Authentication
 - `POST /api/auth/register` - User registration
@@ -190,6 +267,16 @@ The backend API will be available at `http://localhost:8000/api`
 - `POST /api/battles` - Start new battle
 - `GET /api/battles/{id}` - Get battle details
 - `POST /api/battles/{id}/move` - Make a game move
+
+## 🔐 Authentication Flow
+
+1. **Register**: `POST /api/auth/register` → Create user and token
+2. **Login**: `POST /api/auth/login` → Verify credentials and return token
+3. **Protected Routes**: Include `Authorization: Bearer {token}` header
+4. **Token Validation**: Sanctum middleware validates all requests
+5. **Logout**: `POST /api/auth/logout` → Revoke token
+
+Token stored in localStorage on frontend and automatically added to API requests.
 
 ## 🎨 Component Structure
 
@@ -216,35 +303,173 @@ The backend API will be available at `http://localhost:8000/api`
 4. All subsequent API requests include token in headers
 5. Backend validates token via Sanctum middleware
 
+## 🌐 Architecture Overview
+
+### Frontend Data Flow
+```
+User Action → Vue Component → Pinia Store → Axios API Call → Backend
+                    ↓
+            Update State → Component Re-render → Display UI
+```
+
+### Backend Request Flow
+```
+HTTP Request → Route Middleware → Controller Action → Model/Database
+                                      ↓
+                            Validate Input & Auth
+                                      ↓
+                            Process & Return Response
+```
+
+### Authentication Security
+- Passwords hashed with bcrypt
+- Tokens validated on each request (Sanctum)
+- CORS configured for frontend domain
+- SQL injection prevented (Eloquent ORM)
+- Input validation on server
+
+## 🔧 Development Commands
+
+### Frontend
+```bash
+cd frontend
+npm run dev          # Start dev server (port 5173)
+npm run build        # Production build
+npm run preview      # Preview production build
+npm run lint         # Lint and fix code
+npm run test         # Run tests
+```
+
+### Backend
+```bash
+cd backend
+php artisan serve                    # Start server (port 8000)
+php artisan migrate                  # Run migrations
+php artisan migrate:fresh            # Reset & migrate
+php artisan make:model ModelName     # Create model
+php artisan make:controller ControllerName  # Create controller
+php artisan make:migration TableName  # Create migration
+php artisan test                     # Run tests
+php artisan cache:clear             # Clear cache
+```
+
+## 📋 Environment Configuration
+
+### Frontend (.env.local)
+```
+VITE_API_URL=http://localhost:8000/api
+VITE_APP_NAME=NoslDarbs
+```
+
+### Backend (.env)
+```
+APP_NAME=NoslDarbs
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://localhost:8000
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=nosldarbs
+DB_USERNAME=root
+DB_PASSWORD=
+
+SANCTUM_STATEFUL_DOMAINS=localhost:5173
+SESSION_DOMAIN=localhost
+```
+
+## 🚢 Pushing to GitHub
+
+### Initial Setup
+```powershell
+cd c:\Users\hugok\OneDrive\Desktop\NoslDarbs
+git config user.email "your@email.com"
+git config user.name "Your Name"
+git remote -v  # Verify: origin https://github.com/HugoKocers/NoslDarbs.git
+```
+
+### Push Code (First Time)
+```powershell
+git push -u origin main
+# Enter GitHub credentials when prompted
+# Or use SSH key if configured
+```
+
+### Future Pushes
+```powershell
+git add .
+git commit -m "Your commit message"
+git push
+```
+
+### Feature Branches
+```powershell
+git checkout -b feature/feature-name
+# Make changes...
+git add .
+git commit -m "Add feature description"
+git push -u origin feature/feature-name
+# Create Pull Request on GitHub
+```
+
+## 🐛 Troubleshooting
+
+### Frontend Port 5173 Already in Use
+```bash
+netstat -ano | findstr :5173
+taskkill /PID <PID> /F
+# Or use different port: npm run dev -- --port 3000
+```
+
+### Dependencies Not Installing
+```bash
+# Frontend
+rm -rf node_modules package-lock.json
+npm install
+
+# Backend
+rm -rf vendor composer.lock
+composer install
+```
+
+### Database Connection Error
+```bash
+# Check MySQL is running
+# Verify .env database credentials
+# Create database: mysql -u root -p
+# CREATE DATABASE nosldarbs;
+```
+
+### Migration Error
+```bash
+php artisan migrate:reset      # Rollback all
+php artisan migrate            # Re-run migrations
+# Or: php artisan migrate:fresh  # Reset and migrate
+```
+
+### Git Authentication Failed
+```powershell
+git config --global --unset user.password
+git credential-manager erase https://github.com
+# Try push again with fresh credentials
+```
+
 ## 📦 Building for Production
 
 ### Frontend
 ```bash
 cd frontend
 npm run build
+# Output in: frontend/dist/
 ```
-
-Compiled files will be in `frontend/dist/`
 
 ### Backend
 ```bash
 cd backend
 php artisan config:cache
 php artisan route:cache
-```
-
-## 🧪 Testing
-
-### Frontend Tests (Jest/Vitest)
-```bash
-cd frontend
-npm run test
-```
-
-### Backend Tests (PHPUnit)
-```bash
-cd backend
-php artisan test
+php artisan migrate --force
 ```
 
 ## 📝 Environment Variables

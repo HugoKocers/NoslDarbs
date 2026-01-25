@@ -34,6 +34,11 @@ class User extends Authenticatable
         return $this->belongsToMany(Card::class, 'user_cards')->withTimestamps();
     }
 
+    public function userCards()
+    {
+        return $this->hasMany(UserCard::class);
+    }
+
     public function decks()
     {
         return $this->hasMany(Deck::class);

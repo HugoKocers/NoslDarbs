@@ -69,9 +69,38 @@ export default {
 </script>
 
 <style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body,
+html {
+  background: #000 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+:global(body),
+:global(html) {
+  background: #000 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 :global(.v-app),
 :global(.v-app__wrap) {
   background: #000 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+:global(.v-main),
+:global(.v-main__wrap) {
+  background: #000 !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 :global(.v-container) {
@@ -81,12 +110,13 @@ export default {
 
 <style scoped>
 .navbar {
-  background: linear-gradient(90deg, #000 0%, #1a0033 50%, #000 100%) !important;
-  border-bottom: 1px solid rgba(192, 132, 252, 0.2);
-  backdrop-filter: blur(10px);
+  background: linear-gradient(90deg, rgba(0,0,0,0.95) 0%, rgba(10,0,50,0.95) 50%, rgba(0,0,0,0.95) 100%) !important;
+  border-bottom: 2px solid #00d4ff;
+  backdrop-filter: blur(20px);
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: 0 0 30px rgba(0, 212, 255, 0.3), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 .navbar-container {
@@ -107,40 +137,59 @@ export default {
   gap: 0.75rem;
   text-decoration: none;
   color: #fff;
-  font-weight: 800;
-  font-size: 1.25rem;
+  font-weight: 900;
+  font-size: 1.35rem;
   transition: all 0.3s ease;
+  letter-spacing: 2px;
+  text-transform: uppercase;
 }
 
 .brand-link:hover {
-  color: #c084fc;
+  color: #00d4ff;
+  text-shadow: 0 0 20px #00d4ff, 0 0 40px rgba(0, 102, 255, 0.8);
+  transform: scale(1.05);
 }
 
 .brand-icon {
   font-size: 1.5rem;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    text-shadow: 0 0 10px #00d4ff;
+    filter: drop-shadow(0 0 5px #0066ff);
+  }
+  50% {
+    text-shadow: 0 0 25px #00d4ff, 0 0 35px #0066ff;
+    filter: drop-shadow(0 0 15px #0066ff);
+  }
 }
 
 .brand-text {
-  background: linear-gradient(to right, #c084fc, #e9d5ff);
+  background: linear-gradient(90deg, #00d4ff 0%, #0066ff 50%, #00d4ff 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.6));
 }
 
 .navbar-nav {
   display: flex;
-  gap: 2rem;
+  gap: 2.5rem;
   align-items: center;
 }
 
 .nav-link {
-  color: #d1d5db;
+  color: #88aaff;
   text-decoration: none;
-  font-weight: 500;
-  font-size: 0.95rem;
+  font-weight: 700;
+  font-size: 0.85rem;
   transition: all 0.3s ease;
   position: relative;
   padding-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
 }
 
 .nav-link::after {
@@ -150,37 +199,43 @@ export default {
   left: 0;
   width: 0;
   height: 2px;
-  background: linear-gradient(to right, #c084fc, #06b6d4);
+  background: linear-gradient(90deg, #00d4ff, #0066ff);
   transition: width 0.3s ease;
+  box-shadow: 0 0 10px #00d4ff;
 }
 
 .nav-link:hover {
-  color: #fff;
+  color: #00d4ff;
+  text-shadow: 0 0 12px rgba(0, 212, 255, 0.8);
 }
 
 .nav-link:hover::after {
   width: 100%;
+  box-shadow: 0 0 15px #00d4ff, 0 0 25px #0066ff;
 }
 
 .nav-link.active {
-  color: #c084fc;
+  color: #00d4ff;
+  text-shadow: 0 0 15px #00d4ff, 0 0 30px rgba(0, 102, 255, 0.6);
 }
 
 .nav-link.active::after {
   width: 100%;
+  box-shadow: 0 0 15px #00d4ff, 0 0 25px #0066ff;
 }
 
 .main-content {
   background: #000 !important;
-  min-height: calc(100vh - 64px - 400px);
+  min-height: auto !important;
 }
 
 .footer {
-  background: linear-gradient(180deg, #000 0%, #1a0033 100%);
-  border-top: 1px solid rgba(192, 132, 252, 0.2);
+  background: linear-gradient(180deg, #000 0%, #0a0033 50%, #000 100%);
+  border-top: 2px solid #00d4ff;
   padding: 3rem 0 2rem;
-  margin-top: 4rem;
-  color: #d1d5db;
+  margin: 0 !important;
+  color: #88aaff;
+  box-shadow: 0 -10px 40px rgba(0, 212, 255, 0.15);
 }
 
 .footer-content {
@@ -194,21 +249,27 @@ export default {
   font-size: 1.5rem;
   color: #fff;
   margin-bottom: 0.5rem;
-  background: linear-gradient(to right, #c084fc, #fff);
+  background: linear-gradient(90deg, #00d4ff, #0066ff, #00d4ff);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.4));
 }
 
 .footer-section h4 {
   font-size: 1rem;
-  color: #fff;
+  color: #00d4ff;
   margin-bottom: 1rem;
-  font-weight: 600;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
 }
 
 .footer-section p {
-  color: #9ca3af;
+  color: #6688cc;
   line-height: 1.6;
 }
 
@@ -223,21 +284,22 @@ export default {
 }
 
 .footer-section a {
-  color: #d1d5db;
+  color: #88aaff;
   text-decoration: none;
   transition: all 0.3s ease;
 }
 
 .footer-section a:hover {
-  color: #c084fc;
+  color: #00d4ff;
   transform: translateX(4px);
+  text-shadow: 0 0 10px #00d4ff;
 }
 
 .footer-bottom {
   text-align: center;
   padding-top: 2rem;
-  border-top: 1px solid rgba(192, 132, 252, 0.1);
-  color: #9ca3af;
+  border-top: 1px solid rgba(0, 212, 255, 0.15);
+  color: #6688cc;
   font-size: 0.9rem;
 }
 

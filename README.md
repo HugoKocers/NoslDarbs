@@ -103,19 +103,24 @@ php artisan serve           # Runs on http://localhost:8000
 ## 📋 Features
 
 ### Current Features
-- ✅ Responsive hero section with featured cards showcase
-- ✅ Navigation menu with smooth animations
-- ✅ Card display grid with visual effects
-- ✅ Modern dark theme UI
+- ✅ Responsive landing page with hero section and featured cards
+- ✅ Card collection browser with search functionality
+- ✅ User profiles with achievements and battle statistics
+- ✅ Battle arena with game modes and difficulty selection
+- ✅ Ranked leaderboard system
+- ✅ Deck management interface
+- ✅ Element-based card system (Fire, Water, Nature, Lightning, Dark, Light)
+- ✅ Card rarity system and power/cost attributes
+- ✅ Mobile-responsive design across all pages
+- ✅ Smooth animations and visual effects
+- ✅ MySQL database with 25+ seeded cards
 
 ### Planned Features
-- 🔄 User authentication (register/login)
-- 🃏 Card collection system
-- 🎯 Deck building interface
-- ⚔️ Real-time multiplayer battles
-- 📊 Player statistics and leaderboards
-- 💾 Game state persistence
-- 📱 Mobile-responsive design
+- 🔄 User authentication (register/login/logout)
+- ⚔️ Real-time multiplayer battle system
+- 💾 Persistent game state across sessions
+- 📊 Advanced player statistics tracking
+- 🏆 Tournament matchmaking
 
 ## 🚀 Getting Started
 
@@ -270,30 +275,31 @@ All migrations are ready in `backend/database/migrations/`
 
 ## 🔐 Authentication Flow
 
-1. **Register**: `POST /api/auth/register` → Create user and token
-2. **Login**: `POST /api/auth/login` → Verify credentials and return token
-3. **Protected Routes**: Include `Authorization: Bearer {token}` header
-4. **Token Validation**: Sanctum middleware validates all requests
-5. **Logout**: `POST /api/auth/logout` → Revoke token
+1. **Register**: `POST /api/auth/register` → Create user and token (planned)
+2. **Login**: `POST /api/auth/login` → Verify credentials and return token (planned)
+3. **Protected Routes**: Include `Authorization: Bearer {token}` header (planned)
+4. **Token Validation**: Sanctum middleware validates all requests (planned)
+5. **Logout**: `POST /api/auth/logout` → Revoke token (planned)
 
-Token stored in localStorage on frontend and automatically added to API requests.
+Note: Authentication endpoints are prepared in the backend but frontend account creation is not yet implemented.
 
-## 🎨 Component Structure
-
-### Frontend Components
-- `Header.vue` - Navigation component
-- `CardGrid.vue` - Card display grid
-- `CardCard.vue` - Individual card component
-- `DeckBuilder.vue` - Deck creation/editing
-- `BattleArena.vue` - Game board
-- `UserProfile.vue` - Player profile
+## 🎨 Page Structure
 
 ### Pages/Views
-- `Home.vue` - Landing page
-- `Cards.vue` - Card collection browser
-- `Play.vue` - Battle interface
-- `Decks.vue` - Deck management
-- `Profile.vue` - User profile
+- `Home.vue` - Landing page with hero section, featured cards, features overview, and lore section
+- `Cards.vue` - Card collection browser with search and filtering by element/rarity
+- `Play.vue` - Battle arena with game mode selection, matchmaking, and ranked leaderboard
+- `Profile.vue` - User profile with achievements, battle statistics, and active decks
+
+### Key UI Elements
+- Navigation bar with brand and links
+- Footer with social and information links
+- Search functionality for card discovery
+- Game mode cards with descriptions
+- Difficulty selector for matchmaking
+- Element-based card display with color coding
+- Player statistics visualization
+- Deck management interface
 
 ## 🔐 Authentication Flow
 
@@ -307,26 +313,25 @@ Token stored in localStorage on frontend and automatically added to API requests
 
 ### Frontend Data Flow
 ```
-User Action → Vue Component → Pinia Store → Axios API Call → Backend
+User Action → Vue Component → Axios API Call → Backend
                     ↓
-            Update State → Component Re-render → Display UI
+            Update Local State → Component Re-render → Display UI
 ```
 
 ### Backend Request Flow
 ```
-HTTP Request → Route Middleware → Controller Action → Model/Database
-                                      ↓
-                            Validate Input & Auth
-                                      ↓
-                            Process & Return Response
+HTTP Request → Route → Controller Action → Model/Database
+                           ↓
+                Validate & Process Data
+                           ↓
+                Return JSON Response
 ```
 
-### Authentication Security
-- Passwords hashed with bcrypt
-- Tokens validated on each request (Sanctum)
-- CORS configured for frontend domain
-- SQL injection prevented (Eloquent ORM)
-- Input validation on server
+### Current Implementation
+- Frontend calls backend API endpoints for card data
+- Cards stored in MySQL database with 25+ seeded examples
+- All data is read-only for now (no user modifications)
+- API responses handled by Axios and rendered in Vue components
 
 ## 🔧 Development Commands
 

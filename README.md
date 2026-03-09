@@ -1,4 +1,4 @@
-# NoslDarbs - CardQuest Game Platform
+# NoslDarbs - CardQuest Game Platform (OUTDATED)
 
 A modern, full-stack card game platform built with Vue.js 3, Vuetify, and Laravel. Players can collect cards, build decks, and engage in strategic battles.
 

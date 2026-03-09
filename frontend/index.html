@@ -3,11 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Enter the neural battlegrounds. Master the quantum cards. Dominate the arena." />
+    <meta name="theme-color" content="#00d4ff" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="CardQuest" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23000' width='192' height='192'/><circle cx='96' cy='96' r='80' fill='%2300d4ff'/><text x='96' y='110' font-size='60' font-weight='bold' text-anchor='middle' fill='%23000' font-family='Arial'>CQ</text></svg>" />
+    
+    <!-- Accessibility -->
+    <meta name="color-scheme" content="dark" />
+    
+    <!-- Security Headers -->
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' http://localhost:8000 http://127.0.0.1:8000;" />
+    
     <title>NoslDarbs - CardQuest</title>
   </head>
   <body>
-    <div id="app"></div>
+    <noscript>
+      <p>This application requires JavaScript to be enabled.</p>
+    </noscript>
+    <div id="app" role="main"></div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

@@ -14,23 +14,23 @@
         <section class="profile-card">
           <div class="avatar-section">
             <div class="avatar">🎴</div>
-            <h2 class="username">COMMANDER_ALPHA</h2>
-            <p class="level-tag">LEVEL 28</p>
+            <h2 class="username">{{ userName }}</h2>
+            <p class="level-tag">LEVEL {{ userLevel }}</p>
           </div>
           
           <div class="profile-stats">
             <div class="stat-block">
-              <span class="stat-value">68%</span>
+              <span class="stat-value">{{ Math.round(winRate) }}%</span>
               <span class="stat-label">WIN RATE</span>
             </div>
             <div class="divider"></div>
             <div class="stat-block">
-              <span class="stat-value">156</span>
+              <span class="stat-value">{{ totalBattles }}</span>
               <span class="stat-label">BATTLES</span>
             </div>
             <div class="divider"></div>
             <div class="stat-block">
-              <span class="stat-value">LEGEND</span>
+              <span class="stat-value">{{ userRank }}</span>
               <span class="stat-label">RANK</span>
             </div>
           </div>
@@ -54,22 +54,22 @@
             <div class="stat-card">
               <div class="stat-icon">📚</div>
               <h3>CARDS COLLECTED</h3>
-              <p class="big-number">342</p>
+              <p class="big-number">{{ cardsCollected }}</p>
               <p class="stat-desc">Out of 500 total</p>
             </div>
             
             <div class="stat-card">
               <div class="stat-icon">🎯</div>
               <h3>DECKS CREATED</h3>
-              <p class="big-number">12</p>
-              <p class="stat-desc">3 Active Decks</p>
+              <p class="big-number">{{ decksCreated }}</p>
+              <p class="stat-desc">{{ decksCreated > 0 ? Math.ceil(decksCreated / 3) : 0 }} Active Decks</p>
             </div>
             
             <div class="stat-card">
               <div class="stat-icon">⭐</div>
               <h3>RAREST CARD</h3>
-              <p class="big-number">MYTHIC</p>
-              <p class="stat-desc">Quantum Overlord</p>
+              <p class="big-number">{{ rareststCard !== 'NONE' ? 'RARE' : 'NONE' }}</p>
+              <p class="stat-desc">{{ rareststCard !== 'NONE' ? rareststCard : 'Collect more cards!' }}</p>
             </div>
           </div>
 
@@ -125,8 +125,14 @@
 </template>
 
 <script>
+import { useAuthStore } from '@/stores/authStore'
+
 export default {
   name: 'Profile',
+  setup() {
+    const authStore = useAuthStore()
+    return { authStore }
+  },
   data() {
     return {
       achievements: [
@@ -138,18 +144,40 @@ export default {
         { id: 6, icon: '💎', name: 'Collector' },
       ],
       elementStats: [
-        { name: 'FIRE', wins: 75, color: '#FF6B35' },
+        { name: 'FIRE', wins: 68, color: '#FF6B35' },
         { name: 'WATER', wins: 70, color: '#00A8E8' },
-        { name: 'NATURE', wins: 68, color: '#06D6A0' },
+        { name: 'NATURE', wins: 65, color: '#06D6A0' },
         { name: 'LIGHTNING', wins: 72, color: '#FFD60A' },
-        { name: 'DARK', wins: 65, color: '#9D4EDD' },
+        { name: 'DARK', wins: 60, color: '#9D4EDD' },
         { name: 'LIGHT', wins: 74, color: '#3A86FF' },
       ],
-      activeDecks: [
-        { id: 1, name: 'INFERNO ASSAULT', wins: 28, losses: 9, elements: ['FIRE', 'LIGHTNING'], cardCount: 30 },
-        { id: 2, name: 'CRYSTAL TIDE', wins: 24, losses: 12, elements: ['WATER', 'LIGHT'], cardCount: 30 },
-        { id: 3, name: 'VOID WHISPER', wins: 22, losses: 15, elements: ['DARK', 'NATURE'], cardCount: 30 },
-      ]
+      activeDecks: []
+    }
+  },
+  computed: {
+    userName() {
+      return this.authStore.user?.name || 'COMMANDER_UNKNOWN'
+    },
+    userLevel() {
+      return this.authStore.user?.level || 1
+    },
+    winRate() {
+      return this.authStore.user?.winRate || 0
+    },
+    totalBattles() {
+      return this.authStore.user?.totalBattles || 0
+    },
+    userRank() {
+      return this.authStore.user?.rank || 'INITIATE'
+    },
+    cardsCollected() {
+      return this.authStore.user?.cardsCollected || 0
+    },
+    decksCreated() {
+      return this.authStore.user?.decksCreated || 0
+    },
+    rareststCard() {
+      return this.authStore.user?.rareststCard || 'NONE'
     }
   },
   methods: {
@@ -191,7 +219,7 @@ export default {
 .profile-content {
   position: relative;
   z-index: 1;
-  padding: 4rem 2rem !important;
+  padding: 6rem 2rem !important;
 }
 
 .profile-header {

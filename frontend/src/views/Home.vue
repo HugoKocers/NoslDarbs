@@ -132,37 +132,18 @@
 
         <div class="spacecraft-viewer">
           <div class="hud-frame">
+            <!-- Inner rotating ring 1 -->
+            <div class="rotating-ring ring-1"></div>
+            
+            <!-- Outer rotating ring 2 -->
+            <div class="rotating-ring ring-2"></div>
+            
+            <!-- Center spacecraft -->
             <div class="hud-center">
-              <div class="spacecraft-model">
-                <svg viewBox="0 0 200 300" class="spacecraft-svg">
-                  <!-- Elongated spacecraft structure -->
-                  <defs>
-                    <linearGradient id="spacecraftGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.8" />
-                      <stop offset="50%" style="stop-color:#cccccc;stop-opacity:0.6" />
-                      <stop offset="100%" style="stop-color:#666666;stop-opacity:0.4" />
-                    </linearGradient>
-                  </defs>
-                  
-                  <!-- Main body -->
-                  <polygon points="100,30 140,80 135,200 65,200 60,80" fill="url(#spacecraftGradient)" stroke="#ffffff" stroke-width="1.5" opacity="0.9"/>
-                  
-                  <!-- Segment divisions -->
-                  <line x1="75" y1="100" x2="125" y2="100" stroke="#ffffff" stroke-width="1" opacity="0.6"/>
-                  <line x1="72" y1="140" x2="128" y2="140" stroke="#ffffff" stroke-width="1" opacity="0.6"/>
-                  <line x1="70" y1="170" x2="130" y2="170" stroke="#ffffff" stroke-width="1" opacity="0.6"/>
-                  
-                  <!-- Engine glow -->
-                  <ellipse cx="100" cy="210" rx="20" ry="15" fill="#88ddff" opacity="0.5"/>
-                  <ellipse cx="100" cy="210" rx="12" ry="8" fill="#ffffff" opacity="0.8"/>
-                  
-                  <!-- Sharp angular accents -->
-                  <polygon points="100,30 105,50 95,50" fill="#ffffff" opacity="0.7"/>
-                </svg>
+              <div class="spacecraft-container">
+                <div class="spacecraft-model"></div>
               </div>
             </div>
-            <div class="hud-circle"></div>
-            <div class="hud-ticks"></div>
           </div>
         </div>
 
@@ -241,6 +222,36 @@ export default {
           power: 81
         }
       ],
+      features: [
+        {
+          id: 1,
+          icon: '🎴',
+          title: 'DYNAMIC DECK BUILDING',
+          description: 'Craft powerful combinations with 7 unique elemental systems'
+        },
+        {
+          id: 2,
+          icon: '⚔️',
+          title: 'TACTICAL BATTLES',
+          description: 'Engage in strategic card-based combat with real opponents'
+        },
+        {
+          id: 3,
+          icon: '✨',
+          title: 'RARITY SYSTEM',
+          description: 'Unlock rare and legendary cards to strengthen your arsenal'
+        },
+        {
+          id: 4,
+          icon: '🏆',
+          title: 'RANKED LEAGUES',
+          description: 'Climb the leaderboards and prove your mastery'
+        }
+      ]
+    }
+  },
+  data() {
+    return {
       features: [
         {
           id: 1,
@@ -1121,8 +1132,79 @@ h1, h2, h3, h4, h5, h6 {
 
 .hud-frame {
   position: relative;
-  width: 350px;
-  height: 350px;
+  width: 400px;
+  height: 400px;
+  perspective: 1200px;
+}
+
+.hud-frame {
+  position: relative;
+  width: 400px;
+  height: 400px;
+  perspective: 1200px;
+}
+
+/* Inner rotating ring 1 - clockwise, ~60% arc */
+.rotating-ring.ring-1 {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 220px;
+  height: 220px;
+  border: 3px solid #00d4ff;
+  border-radius: 50%;
+  clip-path: polygon(
+    50% 0%,
+    100% 0%,
+    100% 50%,
+    100% 100%,
+    50% 100%
+  );
+  animation: spinRing1 8s linear infinite;
+  opacity: 0.7;
+  z-index: 1;
+}
+
+/* Outer rotating ring 2 - counter-clockwise, ~50% arc */
+.rotating-ring.ring-2 {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 320px;
+  height: 320px;
+  border: 3px solid #88ddff;
+  border-radius: 50%;
+  clip-path: polygon(
+    0% 0%,
+    100% 0%,
+    100% 50%,
+    50% 50%,
+    50% 100%,
+    0% 100%
+  );
+  animation: spinRing2 12s linear infinite;
+  opacity: 0.6;
+  z-index: 1;
+}
+
+@keyframes spinRing1 {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes spinRing2 {
+  0% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
 }
 
 .hud-center {
@@ -1131,69 +1213,44 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
-  z-index: 2;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 4;
+  perspective: 1200px;
+}
+
+.spacecraft-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-style: preserve-3d;
 }
 
 .spacecraft-model {
-  width: 180px;
-  height: 270px;
-  filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.2));
-}
-
-.spacecraft-svg {
-  filter: drop-shadow(0 0 10px rgba(136, 221, 255, 0.3));
-  animation: float 6s ease-in-out infinite;
-}
-
-.hud-circle {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 320px;
-  height: 320px;
-  border: 2px solid #ffffff;
+  width: 120px;
+  height: 120px;
+  border: 2px solid #00d4ff;
   border-radius: 50%;
-  opacity: 0.6;
-  z-index: 1;
+  background: radial-gradient(circle at 35% 35%, rgba(0, 50, 80, 0.95), rgba(0, 20, 40, 0.98));
+  box-shadow: 0 0 30px rgba(0, 212, 255, 0.4), inset 0 0 20px rgba(0, 212, 255, 0.1);
+  position: relative;
+  filter: drop-shadow(0 0 15px rgba(0, 212, 255, 0.3));
 }
 
-.hud-ticks {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 320px;
-  height: 320px;
-}
-
-.hud-ticks::before {
+.spacecraft-model::before {
   content: '';
   position: absolute;
-  inset: 0;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 30px;
+  border: 1px solid #88ddff;
   border-radius: 50%;
-  background: conic-gradient(
-    from 0deg,
-    #ffffff 0deg 2deg,
-    transparent 2deg 44deg,
-    #ffffff 44deg 46deg,
-    transparent 46deg 88deg,
-    #ffffff 88deg 90deg,
-    transparent 90deg 134deg,
-    #ffffff 134deg 136deg,
-    transparent 136deg 178deg,
-    #ffffff 178deg 180deg,
-    transparent 180deg 224deg,
-    #ffffff 224deg 226deg,
-    transparent 226deg 268deg,
-    #ffffff 268deg 270deg,
-    transparent 270deg 314deg,
-    #ffffff 314deg 316deg,
-    transparent 316deg 360deg
-  );
-  opacity: 0.7;
-  z-index: 1;
+  background: radial-gradient(circle, rgba(136, 221, 255, 0.2), transparent);
 }
 
 .lore-content {

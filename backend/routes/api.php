@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CardController;
 use App\Http\Controllers\Api\DeckController;
+use App\Http\Controllers\Api\GameController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,6 +30,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Deck routes
     Route::apiResource('decks', DeckController::class);
+
+    // Game routes
+    Route::post('/game/start', [GameController::class, 'start']);
+    Route::post('/game/end', [GameController::class, 'end']);
+    Route::get('/game/stats', [GameController::class, 'stats']);
 });
 
 // Public card browsing

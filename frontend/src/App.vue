@@ -1,28 +1,57 @@
 <template>
   <v-app>
-    <v-app-bar elevation="0" class="navbar">
+    <v-app-bar elevation="0" class="navbar" role="navigation">
       <v-container class="navbar-container">
         <div class="navbar-brand">
-          <router-link to="/" class="brand-link">
+          <router-link to="/" class="brand-link" aria-label="CardQuest Home">
             <span class="brand-icon">⚔️</span>
             <span class="brand-text">CardQuest</span>
           </router-link>
         </div>
         <v-spacer></v-spacer>
-        <nav class="navbar-nav">
-          <router-link to="/" class="nav-link" active-class="active">Home</router-link>
-          <router-link to="/cards" class="nav-link" active-class="active">Cards</router-link>
-          <router-link to="/play" class="nav-link" active-class="active">Play</router-link>
-          <router-link to="/profile" class="nav-link" active-class="active">Profile</router-link>
+        <nav class="navbar-nav" role="menubar">
+          <router-link to="/" class="nav-link" active-class="active" role="menuitem">Home</router-link>
+          <router-link to="/cards" class="nav-link" active-class="active" role="menuitem">Cards</router-link>
+          
+          <!-- Public/Authenticated routes -->
+          <template v-if="authStore.isAuthenticated">
+            <router-link to="/play" class="nav-link" active-class="active" role="menuitem">Play</router-link>
+            <router-link to="/profile" class="nav-link" active-class="active" role="menuitem">Profile</router-link>
+            <router-link to="/statistics" class="nav-link" active-class="active" role="menuitem">Stats</router-link>
+            
+            <!-- Admin link -->
+            <router-link v-if="authStore.isAdmin" to="/admin" class="nav-link nav-admin" active-class="active" role="menuitem">Admin</router-link>
+            
+            <!-- User menu dropdown -->
+            <div class="nav-user-menu">
+              <button @click="showUserMenu = !showUserMenu" class="user-btn" :aria-expanded="showUserMenu" aria-label="User menu">
+                <span class="user-avatar">👤</span>
+                <span class="user-name">{{ authStore.user?.name }}</span>
+                <span class="menu-icon">▼</span>
+              </button>
+              <div v-if="showUserMenu" class="dropdown-menu" role="menu">
+                <router-link to="/profile" class="menu-item" role="menuitem">My Profile</router-link>
+                <router-link to="/statistics" class="menu-item" role="menuitem">Statistics</router-link>
+                <div class="menu-divider"></div>
+                <button @click="handleLogout" class="menu-item logout-item" role="menuitem">Logout</button>
+              </div>
+            </div>
+          </template>
+          
+          <!-- Unauthenticated links -->
+          <template v-else>
+            <router-link to="/login" class="nav-link nav-login" active-class="active" role="menuitem">Login</router-link>
+            <router-link to="/signup" class="nav-link nav-signup" active-class="active" role="menuitem">Sign Up</router-link>
+          </template>
         </nav>
       </v-container>
     </v-app-bar>
 
-    <v-main class="main-content">
+    <v-main class="main-content" role="main">
       <router-view />
     </v-main>
 
-    <footer class="footer">
+    <footer class="footer" role="contentinfo">
       <v-container>
         <div class="footer-content">
           <div class="footer-section">
@@ -55,31 +84,34 @@
           </div>
         </div>
         <div class="footer-bottom">
-          <p>&copy; 2026 CardQuest. All rights reserved.</p>
+          <p>&copy; 2026 CardQuest. Made by Hugo.</p>
         </div>
       </v-container>
     </footer>
   </v-app>
 </template>
 
-<script>
-export default {
-  name: 'App',
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
+
+const router = useRouter()
+const authStore = useAuthStore()
+const showUserMenu = ref(false)
+
+const handleLogout = async () => {
+  await authStore.logout()
+  showUserMenu.value = false
+  router.push('/')
 }
 </script>
 
-<style>
+<style scoped>
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-}
-
-body,
-html {
-  background: #000 !important;
-  margin: 0 !important;
-  padding: 0 !important;
 }
 
 :global(body),
@@ -87,24 +119,369 @@ html {
   background: #000 !important;
   margin: 0 !important;
   padding: 0 !important;
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: #00d4ff #1a1a1a !important;
 }
 
-:global(.v-app),
-:global(.v-app__wrap) {
-  background: #000 !important;
-  margin: 0 !important;
-  padding: 0 !important;
+:global(body::-webkit-scrollbar),
+:global(html::-webkit-scrollbar) {
+  width: 12px;
+}
+
+:global(body::-webkit-scrollbar-track),
+:global(html::-webkit-scrollbar-track) {
+  background: #1a1a1a;
+}
+
+:global(body::-webkit-scrollbar-thumb),
+:global(html::-webkit-scrollbar-thumb) {
+  background: #00d4ff;
+  border-radius: 6px;
+}
+
+:global(body::-webkit-scrollbar-thumb:hover),
+:global(html::-webkit-scrollbar-thumb:hover) {
+  background: #0099cc;
+}
+
+:global(.v-app) {
+  overflow-y: scroll !important;
+}
+
+:global(.v-app-bar) {
+  overflow: visible !important;
 }
 
 :global(.v-main),
 :global(.v-main__wrap) {
   background: #000 !important;
-  margin: 0 !important;
-  padding: 0 !important;
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
 }
 
-:global(.v-container) {
+.navbar {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.95) 0%,
+    rgba(0, 20, 50, 0.5) 50%,
+    rgba(0, 0, 0, 0.95) 100%
+  ) !important;
+  border-bottom: 2px solid rgba(0, 212, 255, 0.2) !important;
+  backdrop-filter: blur(10px);
+  position: relative !important;
+  z-index: 10000 !important;
+  overflow: visible !important;
+}
+
+.navbar-container {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 0.75rem 1rem !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  overflow: visible !important;
+}
+
+.navbar-brand {
+  flex-shrink: 0;
+}
+
+.brand-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: #00d4ff;
+  font-weight: 900;
+  font-size: 1.3rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  transition: all 0.2s ease;
+}
+
+.brand-link:hover,
+.brand-link:focus {
+  text-shadow: 0 0 20px #00d4ff;
+  outline: none;
+}
+
+.brand-icon {
+  font-size: 1.5rem;
+}
+
+.brand-text {
+  background: linear-gradient(90deg, #00d4ff, #0066ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.navbar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow: visible;
+}
+
+.nav-link {
+  padding: 0.6rem 0.8rem;
+  text-decoration: none;
+  color: #aabbdd;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.nav-link:hover,
+.nav-link:focus {
+  color: #00d4ff;
+  text-shadow: 0 0 10px #00d4ff;
+  outline: none;
+}
+
+.nav-link.active {
+  color: #00d4ff;
+  border-bottom-color: #00d4ff;
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+}
+
+.nav-admin {
+  background: rgba(255, 107, 53, 0.1);
+  border: 1px solid #FF6B35;
+  border-radius: 4px;
+  color: #FF6B35;
+}
+
+.nav-login {
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid #00d4ff;
+  border-radius: 4px;
+}
+
+.nav-signup {
+  background: linear-gradient(90deg, #00d4ff, #0066ff);
+  color: #000;
+  border-radius: 4px;
+}
+
+.nav-signup:hover {
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+}
+
+.nav-user-menu {
+  position: relative;
+  z-index: 2;
+  overflow: visible;
+}
+
+.user-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.8rem;
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid #00d4ff;
+  border-radius: 4px;
+  color: #00d4ff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.user-btn:hover {
+  background: rgba(0, 212, 255, 0.2);
+}
+
+.user-avatar {
+  font-size: 1.2rem;
+}
+
+.menu-icon {
+  font-size: 0.7rem;
+  transition: transform 0.2s ease;
+}
+
+.user-btn[aria-expanded='true'] .menu-icon {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  background: linear-gradient(135deg, rgba(0, 20, 50, 0.95), rgba(10, 8, 32, 0.95));
+  border: 2px solid #00d4ff;
+  border-radius: 4px;
+  box-shadow: 0 4px 20px rgba(0, 212, 255, 0.2);
+  min-width: 200px;
+  z-index: 10001;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1.25rem;
+  background: transparent;
+  border: none;
+  color: #aabbdd;
+  text-align: left;
+  text-decoration: none;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+}
+
+.menu-item:hover,
+.menu-item:focus {
+  background: rgba(0, 212, 255, 0.1);
+  color: #00d4ff;
+  outline: none;
+}
+
+.logout-item:hover {
+  background: rgba(255, 50, 50, 0.15);
+  color: #ff8888;
+}
+
+.menu-divider {
+  height: 1px;
+  background: rgba(0, 212, 255, 0.2);
+  margin: 0.5rem 0;
+}
+
+.main-content {
   background: transparent !important;
+  min-height: calc(100vh - 120px);
+  position: relative;
+  z-index: 1;
+  padding-top: 0;
+}
+
+.footer {
+  background: linear-gradient(180deg, #0a0820 0%, #000000 100%);
+  border-top: 1px solid rgba(0, 212, 255, 0.2);
+  margin-top: 4rem;
+  padding: 4rem 0;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 3rem;
+  margin-bottom: 2rem;
+}
+
+.footer-section h3,
+.footer-section h4 {
+  color: #00d4ff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.footer-section p {
+  color: #aabbdd;
+  font-size: 0.9rem;
+}
+
+.footer-section ul {
+  list-style: none;
+}
+
+.footer-section li {
+  margin-bottom: 0.5rem;
+}
+
+.footer-section a {
+  color: #aabbdd;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.footer-section a:hover {
+  color: #00d4ff;
+  text-shadow: 0 0 10px #00d4ff;
+}
+
+.footer-bottom {
+  text-align: center;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(0, 212, 255, 0.2);
+  color: #666;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+  .navbar-container {
+    gap: 1rem;
+  }
+
+  .navbar-nav {
+    width: auto;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    flex-wrap: nowrap;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  .nav-link {
+    padding: 0.5rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .brand-text {
+    display: none;
+  }
+
+  .user-name {
+    display: none;
+  }
+
+  .dropdown-menu {
+    position: fixed;
+    right: 1rem;
+    width: 200px;
+  }
+
+  .footer-content {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
 }
 </style>
 
@@ -227,6 +604,8 @@ html {
 .main-content {
   background: #000 !important;
   min-height: auto !important;
+  position: relative;
+  z-index: 1;
 }
 
 .footer {

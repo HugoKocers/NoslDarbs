@@ -4,75 +4,122 @@
     
     <v-container class="play-content">
       <section class="arena-header">
-        <h1 class="arena-title">BATTLE ARENA</h1>
-        <p class="arena-subtitle">Enter the neural battlegrounds and test your tactical skills</p>
+        <h1 class="arena-title">CARD FLIP ARENA</h1>
+        <p class="arena-subtitle">Flip cards and earn points based on fortune and chance</p>
         <div class="accent-line"></div>
       </section>
 
-      <section class="modes-section">
-        <h2 class="section-label">GAME MODES</h2>
-        <div class="modes-grid">
-          <div class="mode-card" v-for="mode in gameModes" :key="mode.id">
-            <div class="mode-icon">{{ mode.icon }}</div>
-            <h3 class="mode-title">{{ mode.title }}</h3>
-            <p class="mode-description">{{ mode.description }}</p>
-            <div class="mode-stats">
-              <span class="stat">{{ mode.players }} Players</span>
-              <span class="divider">•</span>
-              <span class="stat">{{ mode.duration }}</span>
+      <!-- Game Not Started -->
+      <section v-if="!gameStarted" class="start-game-section">
+        <div class="start-card">
+          <h2>READY TO PLAY?</h2>
+          <p>Flip cards to earn random points. The more you flip, the more you earn!</p>
+          <button @click="startGame" class="start-btn" :disabled="isLoading">
+            <span v-if="!isLoading">START GAME</span>
+            <span v-else>LOADING...</span>
+            <span class="arrow">→</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Game In Progress -->
+      <section v-if="gameStarted && !gameEnded" class="game-section">
+        <div class="game-header">
+          <div class="score-display">
+            <span class="score-label">SESSION POINTS</span>
+            <span class="score-value">{{ sessionPoints }}</span>
+          </div>
+          <div class="cards-left">
+            <span class="left-label">CARDS FLIPPED</span>
+            <span class="left-value">{{ cardsFlipped }}/{{ totalCards }}</span>
+          </div>
+          <div class="multiplier" v-if="pointMultiplier > 1">
+            <span class="mult-label">MULTIPLIER</span>
+            <span class="mult-value">{{ pointMultiplier }}x</span>
+          </div>
+        </div>
+
+        <div class="cards-grid">
+          <div 
+            v-for="(card, idx) in gameCards" 
+            :key="idx"
+            :class="['card-item', { flipped: card.flipped, revealed: card.revealed }]"
+            @click="flipCard(idx)"
+            :style="{ '--card-delay': idx * 0.05 + 's' }"
+          >
+            <div class="card-inner">
+              <div class="card-front">
+                <span class="card-emoji">🎴</span>
+                <span class="card-number">{{ idx + 1 }}</span>
+              </div>
+              <div class="card-back">
+                <span class="card-result" :class="'result-' + card.result">
+                  {{ card.result >= 0 ? '+' : '' }}{{ card.result }}
+                </span>
+              </div>
             </div>
-            <button class="play-btn">
-              <span>ENTER</span>
+          </div>
+        </div>
+
+        <div class="game-actions">
+          <button @click="endGame" class="end-game-btn">
+            <span>END GAME</span>
+            <span class="arrow">→</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Game Results -->
+      <section v-if="gameEnded" class="results-section">
+        <div class="results-card">
+          <div class="result-status" :class="gameWon ? 'won' : 'completed'">
+            <span class="result-icon">{{ gameWon ? '🏆' : '✨' }}</span>
+            <h2>{{ gameWon ? 'EXCELLENT!' : 'GAME OVER!' }}</h2>
+          </div>
+
+          <div class="result-stats">
+            <div class="stat-item">
+              <span class="stat-title">FINAL SCORE</span>
+              <span class="stat-value">{{ sessionPoints }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-title">CARDS FLIPPED</span>
+              <span class="stat-value">{{ cardsFlipped }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-title">AVERAGE</span>
+              <span class="stat-value">{{ (sessionPoints / cardsFlipped).toFixed(1) }}</span>
+            </div>
+          </div>
+
+          <div class="result-actions">
+            <button @click="resetGame" class="play-again-btn">
+              <span>PLAY AGAIN</span>
               <span class="arrow">→</span>
             </button>
+            <router-link to="/profile" class="view-profile-btn">
+              <span>VIEW PROFILE</span>
+              <span class="arrow">→</span>
+            </router-link>
           </div>
         </div>
       </section>
 
-      <section class="matchmaking-section">
-        <div class="matchmaking-card">
-          <div class="matchmaking-header">
-            <h2 class="matchmaking-title">QUICK MATCHMAKING</h2>
-            <p class="matchmaking-desc">Find and battle players of your skill level instantly</p>
-          </div>
-          <div class="matchmaking-content">
-            <div class="skill-selector">
-              <label>SELECT DIFFICULTY</label>
-              <div class="difficulty-buttons">
-                <button v-for="(diff, idx) in difficulties" :key="idx" :class="['diff-btn', { active: selectedDifficulty === idx }]" @click="selectedDifficulty = idx">
-                  {{ diff }}
-                </button>
-              </div>
-            </div>
-            <div class="deck-preview">
-              <label>YOUR DECK STRENGTH</label>
-              <div class="strength-bar">
-                <div class="strength-fill" style="width: 75%"></div>
-                <span class="strength-label">EXCELLENT</span>
-              </div>
-            </div>
-            <button class="find-opponent-btn">
-              <span class="pulse-icon">▶</span>
-              FIND OPPONENT
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <section class="leaderboard-preview">
-        <h2 class="section-label">RANKED LEADERBOARD</h2>
+      <!-- Leaderboard -->
+      <section class="leaderboard-section">
+        <h2 class="section-label">TOP PLAYERS</h2>
         <div class="leaderboard-table">
           <div class="leaderboard-header">
             <span class="rank">RANK</span>
             <span class="player">PLAYER</span>
-            <span class="rating">RATING</span>
-            <span class="wins">WINS</span>
+            <span class="points">TOTAL POINTS</span>
+            <span class="games">GAMES</span>
           </div>
           <div class="leaderboard-row" v-for="(player, idx) in topPlayers" :key="idx">
             <span class="rank">{{ idx + 1 }}</span>
             <span class="player">{{ player.name }}</span>
-            <span class="rating" :style="{ color: player.color }">{{ player.rating }}</span>
-            <span class="wins">{{ player.wins }}W</span>
+            <span class="points">{{ player.points }}</span>
+            <span class="games">{{ player.games }}</span>
           </div>
         </div>
       </section>
@@ -81,53 +128,107 @@
 </template>
 
 <script>
+import { gameService } from '@/services/api'
+
 export default {
   name: 'Play',
   data() {
     return {
-      selectedDifficulty: 1,
-      gameModes: [
-        {
-          id: 1,
-          icon: '⚔️',
-          title: 'DUEL',
-          description: 'Face off against a single opponent in intense 1v1 combat',
-          players: '2',
-          duration: '5-10 min'
-        },
-        {
-          id: 2,
-          icon: '👥',
-          title: 'SQUAD BATTLE',
-          description: 'Lead your team to victory in a 3v3 team skirmish',
-          players: '6',
-          duration: '10-15 min'
-        },
-        {
-          id: 3,
-          icon: '🏆',
-          title: 'TOURNAMENT',
-          description: 'Compete in a bracket-style tournament for ultimate glory',
-          players: '8',
-          duration: '30-45 min'
-        },
-        {
-          id: 4,
-          icon: '⚡',
-          title: 'CHAOS ARENA',
-          description: 'Unpredictable chaos mode with random card modifiers',
-          players: '4',
-          duration: '8-12 min'
-        }
-      ],
-      difficulties: ['EASY', 'NORMAL', 'HARD', 'LEGENDARY'],
+      gameStarted: false,
+      gameEnded: false,
+      gameWon: false,
+      isLoading: false,
+      sessionPoints: 0,
+      cardsFlipped: 0,
+      totalCards: 12,
+      pointMultiplier: 1,
+      gameCards: [],
       topPlayers: [
-        { name: 'SHADOW_STRIKER', rating: 2850, wins: 156, color: '#FFD60A' },
-        { name: 'QUANTUM_MASTER', rating: 2720, wins: 143, color: '#00d4ff' },
-        { name: 'NEON_PHOENIX', rating: 2680, wins: 138, color: '#FF6B35' },
-        { name: 'VOID_SENTINEL', rating: 2640, wins: 131, color: '#9D4EDD' },
-        { name: 'CRYSTAL_ECHO', rating: 2580, wins: 125, color: '#06D6A0' }
+        { name: 'SHADOW_STRIKER', points: 28500, games: 156, color: '#FFD60A' },
+        { name: 'QUANTUM_MASTER', points: 27200, games: 143, color: '#00d4ff' },
+        { name: 'NEON_PHOENIX', points: 26800, games: 138, color: '#FF6B35' },
+        { name: 'VOID_SENTINEL', points: 26400, games: 131, color: '#9D4EDD' },
+        { name: 'CRYSTAL_ECHO', points: 25800, games: 125, color: '#06D6A0' }
       ]
+    }
+  },
+  methods: {
+    startGame() {
+      this.isLoading = true
+      this.gameStarted = true
+      this.gameEnded = false
+      this.sessionPoints = 0
+      this.cardsFlipped = 0
+      this.pointMultiplier = 1
+      
+      // Initialize cards
+      this.gameCards = Array.from({ length: this.totalCards }, (_, i) => ({
+        id: i,
+        flipped: false,
+        revealed: false,
+        result: this.generateRandomPoints()
+      }))
+      
+      setTimeout(() => {
+        this.isLoading = false
+      }, 500)
+    },
+    
+    flipCard(index) {
+      if (this.gameCards[index].flipped || !this.gameStarted || this.gameEnded) return
+      
+      const card = this.gameCards[index]
+      card.flipped = true
+      
+      // Delay reveal for animation
+      setTimeout(() => {
+        card.revealed = true
+        this.sessionPoints += card.result
+        this.cardsFlipped += 1
+        
+        // Increase multiplier every 3 cards
+        if (this.cardsFlipped % 3 === 0) {
+          this.pointMultiplier = 1 + (this.cardsFlipped / 3) * 0.25
+        }
+        
+        // Auto-end if all cards flipped
+        if (this.cardsFlipped === this.totalCards) {
+          setTimeout(() => this.endGame(), 1000)
+        }
+      }, 300)
+    },
+    
+    generateRandomPoints() {
+      const outcomes = [-2, -1, 0, 5, 5, 5, 10, 10, 15, 20]
+      return outcomes[Math.floor(Math.random() * outcomes.length)]
+    },
+    
+    endGame() {
+      this.gameStarted = false
+      this.gameEnded = true
+      this.gameWon = this.sessionPoints > 50
+      this.saveGameResult()
+    },
+    
+    resetGame() {
+      this.gameStarted = false
+      this.gameEnded = false
+      this.gameWon = false
+      this.sessionPoints = 0
+      this.cardsFlipped = 0
+      this.pointMultiplier = 1
+      this.gameCards = []
+    },
+    
+    saveGameResult() {
+      // Save to backend
+      gameService.endGame({
+        points: this.sessionPoints,
+        cards_flipped: this.cardsFlipped,
+        game_mode: 'rng'
+      }).then(response => {
+        console.log('Game saved:', response.data)
+      }).catch(err => console.error('Failed to save game:', err))
     }
   }
 }
@@ -154,8 +255,8 @@ export default {
 
 .play-content {
   position: relative;
-  z-index: 1;
-  padding: 4rem 2rem !important;
+  z-index: 0;
+  padding: 6rem 2rem !important;
 }
 
 .arena-header {
@@ -200,250 +301,57 @@ export default {
   text-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
 }
 
-.modes-section {
-  margin-bottom: 4rem;
+/* START GAME SECTION */
+.start-game-section {
+  margin: 4rem 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
 }
 
-.modes-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 2.5rem;
-  margin-bottom: 3rem;
-}
-
-.mode-card {
+.start-card {
   background: linear-gradient(135deg, rgba(0, 50, 100, 0.2), rgba(0, 20, 50, 0.3));
   border: 2px solid #00d4ff;
   border-radius: 8px;
-  padding: 2rem;
-  text-align: center;
-  transition: all 0.4s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.mode-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at 50% 50%, rgba(0, 212, 255, 0.1), transparent);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: 0;
-}
-
-.mode-card:hover {
-  border-color: #0066ff;
-  box-shadow: 0 0 40px #00d4ff, inset 0 0 20px rgba(0, 212, 255, 0.05);
-  transform: translateY(-10px);
-}
-
-.mode-card:hover::before {
-  opacity: 1;
-}
-
-.mode-icon {
-  font-size: 3.5rem;
-  margin-bottom: 1rem;
-  display: block;
-  position: relative;
-  z-index: 1;
-}
-
-.mode-title {
-  font-size: 1.4rem;
-  color: #fff;
-  margin-bottom: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: 900;
-  position: relative;
-  z-index: 1;
-}
-
-.mode-description {
-  color: #aabbdd;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  margin-bottom: 1.5rem;
-  position: relative;
-  z-index: 1;
-}
-
-.mode-stats {
-  color: #88aaff;
-  font-size: 0.85rem;
-  margin-bottom: 1.5rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  position: relative;
-  z-index: 1;
-}
-
-.divider {
-  margin: 0 0.5rem;
-  color: #00d4ff;
-}
-
-.play-btn {
-  width: 100%;
-  padding: 0.75rem 1.5rem;
-  background: linear-gradient(90deg, #00d4ff, #0066ff);
-  color: #000;
-  border: none;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  position: relative;
-  z-index: 2;
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-}
-
-.play-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 40px #00d4ff, 0 0 60px rgba(0, 102, 255, 0.3);
-}
-
-.play-btn .arrow {
-  font-weight: 900;
-}
-
-.matchmaking-section {
-  margin-bottom: 4rem;
-}
-
-.matchmaking-card {
-  background: linear-gradient(135deg, rgba(0, 50, 100, 0.15), rgba(0, 20, 50, 0.25));
-  border: 2px solid #0066ff;
-  border-radius: 8px;
   padding: 3rem;
-  box-shadow: 0 0 30px rgba(0, 102, 255, 0.15);
-}
-
-.matchmaking-header {
   text-align: center;
-  margin-bottom: 2.5rem;
+  max-width: 600px;
+  box-shadow: 0 0 30px rgba(0, 212, 255, 0.15);
+  animation: slideIn 0.8s ease-out;
 }
 
-.matchmaking-title {
-  font-size: 2rem;
-  color: #0066ff;
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.start-card h2 {
+  font-size: 2.5rem;
   text-transform: uppercase;
-  letter-spacing: 2px;
-  margin-bottom: 0.5rem;
-  text-shadow: 0 0 15px rgba(0, 102, 255, 0.5);
-}
-
-.matchmaking-desc {
-  color: #88aaff;
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.matchmaking-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3rem;
-  margin-bottom: 2rem;
-}
-
-.skill-selector,
-.deck-preview {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.skill-selector label,
-.deck-preview label {
-  color: #00d4ff;
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  font-weight: 700;
-}
-
-.difficulty-buttons {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.diff-btn {
-  flex: 1;
-  padding: 0.75rem;
-  background: rgba(0, 212, 255, 0.05);
-  border: 1px solid #00d4ff;
-  color: #88aaff;
-  text-transform: uppercase;
-  font-weight: 700;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border-radius: 4px;
-  letter-spacing: 1px;
-}
-
-.diff-btn:hover {
-  border-color: #0066ff;
-  box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
-}
-
-.diff-btn.active {
   background: linear-gradient(90deg, #00d4ff, #0066ff);
-  color: #000;
-  font-weight: 900;
-  box-shadow: 0 0 25px #00d4ff;
-  border-color: #0066ff;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 1rem;
+  letter-spacing: 2px;
 }
 
-.strength-bar {
-  position: relative;
-  width: 100%;
-  height: 40px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid #00d4ff;
-  border-radius: 4px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.start-card p {
+  color: #88aaff;
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  line-height: 1.6;
 }
 
-.strength-fill {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  background: linear-gradient(90deg, #06D6A0, #00d4ff);
-  transition: width 0.3s ease;
-  z-index: 1;
-}
-
-.strength-label {
-  position: relative;
-  z-index: 2;
-  color: #fff;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-  font-size: 0.9rem;
-}
-
-.find-opponent-btn {
-  width: 100%;
-  padding: 1.2rem;
+.start-btn {
+  padding: 1rem 2rem;
   background: linear-gradient(90deg, #00d4ff, #0066ff);
   color: #000;
   border: none;
@@ -452,30 +360,338 @@ export default {
   letter-spacing: 2px;
   cursor: pointer;
   border-radius: 4px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 0.75rem;
   font-size: 1.1rem;
   transition: all 0.3s ease;
   box-shadow: 0 0 25px rgba(0, 212, 255, 0.3);
 }
 
-.find-opponent-btn:hover {
-  transform: scale(1.02);
+.start-btn:hover:not(:disabled) {
+  transform: scale(1.05);
   box-shadow: 0 0 50px #00d4ff, 0 0 80px rgba(0, 102, 255, 0.4);
 }
 
-.pulse-icon {
-  animation: pulse-play 1s ease-in-out infinite;
+.start-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-@keyframes pulse-play {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+/* GAME SECTION */
+.game-section {
+  margin-bottom: 4rem;
 }
 
-.leaderboard-preview {
+.game-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 3rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, rgba(0, 50, 100, 0.2), rgba(0, 20, 50, 0.3));
+  border: 2px solid #00d4ff;
+  border-radius: 8px;
+}
+
+.score-display,
+.cards-left,
+.multiplier {
+  text-align: center;
+}
+
+.score-label,
+.left-label,
+.mult-label {
+  display: block;
+  color: #00d4ff;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.score-value,
+.left-value,
+.mult-value {
+  display: block;
+  font-size: 2rem;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.card-item {
+  perspective: 1000px;
+  cursor: pointer;
+  animation: cardAppear 0.6s ease-out forwards;
+  animation-delay: var(--card-delay, 0s);
+  opacity: 0;
+}
+
+@keyframes cardAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.card-item:hover:not(.flipped) {
+  transform: scale(1.05);
+}
+
+.card-inner {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2/3;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.card-item.flipped .card-inner {
+  transform: rotateY(180deg);
+}
+
+.card-front,
+.card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  border-radius: 8px;
+  font-weight: 900;
+  border: 2px solid;
+}
+
+.card-front {
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 102, 255, 0.2));
+  border-color: #00d4ff;
+  color: #00d4ff;
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.card-back {
+  background: linear-gradient(135deg, rgba(100, 50, 200, 0.3), rgba(0, 150, 255, 0.3));
+  border-color: #0066ff;
+  transform: rotateY(180deg);
+}
+
+.card-emoji {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.card-number {
+  font-size: 1.2rem;
+  color: #88aaff;
+}
+
+.card-result {
+  font-size: 1.8rem;
+  font-weight: 900;
+}
+
+.result-20,
+.result-15,
+.result-10,
+.result-5 {
+  color: #06D6A0;
+  text-shadow: 0 0 15px #06D6A0;
+}
+
+.result-0 {
+  color: #FFD60A;
+  text-shadow: 0 0 15px #FFD60A;
+}
+
+.result--1,
+.result--2 {
+  color: #FF6B35;
+  text-shadow: 0 0 15px #FF6B35;
+}
+
+.game-actions {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.end-game-btn {
+  padding: 1rem 2rem;
+  background: linear-gradient(90deg, #FF6B35, #FF4500);
+  color: #fff;
+  border: none;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 25px rgba(255, 107, 53, 0.3);
+}
+
+.end-game-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 50px #FF6B35, 0 0 80px rgba(255, 107, 53, 0.4);
+}
+
+/* RESULTS SECTION */
+.results-section {
+  margin-bottom: 4rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.results-card {
+  background: linear-gradient(135deg, rgba(0, 50, 100, 0.2), rgba(0, 20, 50, 0.3));
+  border: 2px solid #00d4ff;
+  border-radius: 8px;
+  padding: 3rem;
+  text-align: center;
+  max-width: 700px;
+  animation: slideIn 0.8s ease-out;
+}
+
+.result-status {
+  margin-bottom: 2rem;
+}
+
+.result-status.won {
+  color: #FFD60A;
+}
+
+.result-status.completed {
+  color: #06D6A0;
+}
+
+.result-icon {
+  font-size: 4rem;
+  display: block;
+  margin-bottom: 1rem;
+  animation: bounce 1s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+.result-status h2 {
+  font-size: 2.5rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 0 20px currentColor;
+}
+
+.result-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  border: 1px solid #00d4ff;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-title {
+  color: #00d4ff;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.result-actions {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.play-again-btn,
+.view-profile-btn {
+  padding: 0.75rem 1.5rem;
+  border: 2px solid;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.play-again-btn {
+  background: linear-gradient(90deg, #00d4ff, #0066ff);
+  color: #000;
+  border-color: #00d4ff;
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+}
+
+.play-again-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 40px #00d4ff, 0 0 60px rgba(0, 102, 255, 0.3);
+}
+
+.view-profile-btn {
+  background: transparent;
+  color: #00d4ff;
+  border-color: #00d4ff;
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+}
+
+.view-profile-btn:hover {
+  background: rgba(0, 212, 255, 0.1);
+  box-shadow: 0 0 30px rgba(0, 212, 255, 0.4);
+}
+
+.leaderboard-section {
+  margin-bottom: 2rem;
+}
+
+.leaderboard-section {
   margin-bottom: 2rem;
 }
 
@@ -534,15 +750,16 @@ export default {
   font-size: 0.95rem;
 }
 
-.rating {
+.points {
   font-weight: 900;
   text-align: center;
   font-size: 1rem;
-  text-shadow: 0 0 10px currentColor;
+  color: #06D6A0;
+  text-shadow: 0 0 10px #06D6A0;
 }
 
-.wins {
-  color: #06D6A0;
+.games {
+  color: #FFD60A;
   text-align: center;
   font-weight: 700;
   text-transform: uppercase;
@@ -554,7 +771,11 @@ export default {
     font-size: 2.5rem;
   }
 
-  .matchmaking-content {
+  .game-header {
+    grid-template-columns: 1fr;
+  }
+
+  .result-stats {
     grid-template-columns: 1fr;
   }
 }
@@ -568,16 +789,41 @@ export default {
     font-size: 2rem;
   }
 
-  .modes-grid {
-    grid-template-columns: 1fr;
+  .cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 1rem;
   }
 
-  .matchmaking-card {
+  .game-header {
+    grid-template-columns: 1fr;
+    gap: 1rem;
     padding: 1.5rem;
   }
 
-  .matchmaking-content {
-    grid-template-columns: 1fr;
+  .start-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .start-card h2 {
+    font-size: 1.8rem;
+  }
+
+  .start-card p {
+    font-size: 1rem;
+  }
+
+  .results-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .result-actions {
+    gap: 1rem;
+  }
+
+  .play-again-btn,
+  .view-profile-btn {
+    flex: 1;
+    min-width: 140px;
   }
 
   .leaderboard-header,

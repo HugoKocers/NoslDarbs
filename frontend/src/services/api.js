@@ -75,4 +75,19 @@ export const battleService = {
   }
 }
 
+export const gameService = {
+  startGame() {
+    return apiClient.post('/game/start')
+  },
+  flipCard(gameId, cardIndex) {
+    return apiClient.post(`/game/${gameId}/flip`, { card_index: cardIndex })
+  },
+  endGame(gameData) {
+    return apiClient.post(`/game/end`, gameData)
+  },
+  getGameStats() {
+    return apiClient.get('/game/stats')
+  }
+}
+
 export default apiClient

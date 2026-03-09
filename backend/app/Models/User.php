@@ -17,6 +17,7 @@ class User extends Authenticatable
         'password',
         'level',
         'experience',
+        'role',
     ];
 
     protected $hidden = [
@@ -52,5 +53,21 @@ class User extends Authenticatable
     public function battlesAsPlayer2()
     {
         return $this->hasMany(Battle::class, 'player2_id');
+    }
+
+    public function gameRecords()
+    {
+        return $this->hasMany(GameRecord::class);
+    }
+
+    // Role checking methods
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isUser(): bool
+    {
+        return $this->role === 'user';
     }
 }

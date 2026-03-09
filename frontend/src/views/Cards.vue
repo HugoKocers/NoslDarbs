@@ -5,16 +5,97 @@
       <p class="section-subtitle">Browse and manage your arsenal</p>
     </div>
     
-    <div class="search-wrapper">
-      <div class="search-box">
-        <span class="search-icon">🔍</span>
-        <input 
-          v-model="search" 
-          type="text" 
-          placeholder="Search cards by name or element..."
-          class="search-input"
-        >
-        <button v-if="search" @click="search = ''" class="clear-btn">✕</button>
+    <!-- Search and Filters -->
+    <div class="filters-section">
+      <div class="search-box-wrapper">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input 
+            v-model="search" 
+            type="text" 
+            placeholder="Search cards by name..."
+            class="search-input"
+            aria-label="Search cards"
+          >
+          <button v-if="search" @click="search = ''" class="clear-btn" aria-label="Clear search">✕</button>
+        </div>
+      </div>
+
+      <div class="filter-controls">
+        <!-- Element Filter -->
+        <div class="filter-group">
+          <label for="element-filter" class="filter-label">Element</label>
+          <select 
+            id="element-filter"
+            v-model="filterElement" 
+            class="filter-select"
+            aria-label="Filter by element"
+          >
+            <option value="">All Elements</option>
+            <option value="Fire">Fire</option>
+            <option value="Water">Water</option>
+            <option value="Nature">Nature</option>
+            <option value="Lightning">Lightning</option>
+            <option value="Dark">Dark</option>
+            <option value="Light">Light</option>
+          </select>
+        </div>
+
+        <!-- Rarity Filter -->
+        <div class="filter-group">
+          <label for="rarity-filter" class="filter-label">Rarity</label>
+          <select 
+            id="rarity-filter"
+            v-model="filterRarity" 
+            class="filter-select"
+            aria-label="Filter by rarity"
+          >
+            <option value="">All Rarities</option>
+            <option value="Common">Common</option>
+            <option value="Uncommon">Uncommon</option>
+            <option value="Rare">Rare</option>
+            <option value="Legendary">Legendary</option>
+          </select>
+        </div>
+
+        <!-- Sort -->
+        <div class="filter-group">
+          <label for="sort-select" class="filter-label">Sort By</label>
+          <select 
+            id="sort-select"
+            v-model="sortBy" 
+            class="filter-select"
+            aria-label="Sort cards"
+          >
+            <option value="name">Name (A-Z)</option>
+            <option value="power-desc">Power (High to Low)</option>
+            <option value="power-asc">Power (Low to High)</option>
+            <option value="cost-desc">Cost (High to Low)</option>
+            <option value="cost-asc">Cost (Low to High)</option>
+          </select>
+        </div>
+
+        <!-- Reset Filters -->
+        <button @click="resetFilters" class="reset-btn" aria-label="Reset all filters">
+          Reset
+        </button>
+      </div>
+
+      <!-- Active Filters Display -->
+      <div v-if="hasActiveFilters" class="active-filters">
+        <span class="filters-label">Active Filters:</span>
+        <div v-if="filterElement" class="filter-tag">
+          Element: {{ filterElement }}
+          <button @click="filterElement = ''" class="tag-remove">✕</button>
+        </div>
+        <div v-if="filterRarity" class="filter-tag">
+          Rarity: {{ filterRarity }}
+          <button @click="filterRarity = ''" class="tag-remove">✕</button>
+        </div>
+        <div v-if="search" class="filter-tag">
+          Search: {{ search }}
+          <button @click="search = ''" class="tag-remove">✕</button>
+        </div>
       </div>
     </div>
     
@@ -25,6 +106,11 @@
     <div v-if="loading" class="loading-container">
       <v-progress-circular indeterminate size="64" color="#00d4ff"></v-progress-circular>
       <p class="loading-text">Initializing card library...</p>
+    </div>
+
+    <div v-else-if="filteredCards.length === 0" class="no-results">
+      <p>No cards found matching your filters.</p>
+      <button @click="resetFilters" class="reset-btn">Clear Filters</button>
     </div>
     
     <div v-else class="cards-grid">
@@ -81,16 +167,48 @@ export default {
     return {
       cards: [],
       search: '',
+      filterElement: '',
+      filterRarity: '',
+      sortBy: 'name',
       loading: true,
       error: null
     }
   },
   computed: {
+    hasActiveFilters() {
+      return this.search || this.filterElement || this.filterRarity
+    },
     filteredCards() {
-      return this.cards.filter(card =>
-        card.name.toLowerCase().includes(this.search.toLowerCase()) ||
-        card.element.toLowerCase().includes(this.search.toLowerCase())
-      )
+      let filtered = this.cards.filter(card => {
+        // Search filter
+        const matchesSearch = card.name.toLowerCase().includes(this.search.toLowerCase()) ||
+                            card.description.toLowerCase().includes(this.search.toLowerCase())
+        
+        // Element filter
+        const matchesElement = !this.filterElement || card.element === this.filterElement
+        
+        // Rarity filter
+        const matchesRarity = !this.filterRarity || card.rarity === this.filterRarity
+        
+        return matchesSearch && matchesElement && matchesRarity
+      })
+
+      // Apply sorting
+      return filtered.sort((a, b) => {
+        switch (this.sortBy) {
+          case 'power-desc':
+            return b.power - a.power
+          case 'power-asc':
+            return a.power - b.power
+          case 'cost-desc':
+            return b.cost - a.cost
+          case 'cost-asc':
+            return a.cost - b.cost
+          case 'name':
+          default:
+            return a.name.localeCompare(b.name)
+        }
+      })
     }
   },
   methods: {
@@ -104,7 +222,7 @@ export default {
         light: '#3A86FF',
         neutral: '#8B8B8B'
       }
-      return colors[element] || '#8B8B8B'
+      return colors[element.toLowerCase()] || '#8B8B8B'
     },
     getRarityColor(rarity) {
       const colors = {
@@ -113,7 +231,13 @@ export default {
         rare: '#00A8E8',
         legendary: '#FFD60A'
       }
-      return colors[rarity] || '#A0A0A0'
+      return colors[rarity.toLowerCase()] || '#A0A0A0'
+    },
+    resetFilters() {
+      this.search = ''
+      this.filterElement = ''
+      this.filterRarity = ''
+      this.sortBy = 'name'
     },
     async fetchCards() {
       try {
@@ -134,6 +258,271 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+* {
+  box-sizing: border-box;
+}
+
+.cards-container {
+  background: #000;
+  min-height: calc(100vh - 100px);
+  padding-top: 6rem !important;
+  padding-bottom: 3rem !important;
+  margin: 0 !important;
+  position: relative;
+  z-index: 0;
+}
+
+.header-section {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.section-title {
+  background: linear-gradient(90deg, #00d4ff, #0066ff, #00d4ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  font-weight: 900;
+  filter: drop-shadow(0 0 15px rgba(0, 212, 255, 0.3));
+}
+
+.section-subtitle {
+  color: #88aaff;
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Filters Section */
+.filters-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba(0, 50, 100, 0.1);
+  border: 1px solid #00d4ff;
+  border-radius: 8px;
+}
+
+.search-box-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+.search-box {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  align-items: center;
+  background: rgba(0, 212, 255, 0.05);
+  border: 2px solid #00d4ff;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
+}
+
+.search-box:focus-within {
+  border-color: #0066ff;
+  box-shadow: 0 0 30px rgba(0, 212, 255, 0.3), inset 0 0 20px rgba(0, 102, 255, 0.1);
+}
+
+.search-icon {
+  margin-right: 0.75rem;
+  font-size: 1.2rem;
+  color: #00d4ff;
+}
+
+.search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 1rem;
+  outline: none;
+  font-family: 'Roboto Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.search-input::placeholder {
+  color: #666;
+}
+
+.clear-btn {
+  background: none;
+  border: none;
+  color: #00d4ff;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: all 0.2s ease;
+  padding: 0.25rem 0.5rem;
+}
+
+.clear-btn:hover {
+  color: #ff6666;
+}
+
+.filter-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-label {
+  color: #00d4ff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.filter-select {
+  padding: 0.6rem;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid #00d4ff;
+  border-radius: 4px;
+  color: #fff;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-select:hover,
+.filter-select:focus {
+  border-color: #0066ff;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+  outline: none;
+}
+
+.reset-btn {
+  padding: 0.6rem 1.2rem;
+  background: transparent;
+  border: 2px solid #00d4ff;
+  border-radius: 4px;
+  color: #00d4ff;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  align-self: flex-end;
+}
+
+.reset-btn:hover {
+  background: rgba(0, 212, 255, 0.1);
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+}
+
+.active-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+.filters-label {
+  color: #888;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.filter-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  background: rgba(0, 212, 255, 0.15);
+  border: 1px solid #00d4ff;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  color: #00d4ff;
+}
+
+.tag-remove {
+  background: none;
+  border: none;
+  color: #00d4ff;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.tag-remove:hover {
+  color: #ff6666;
+}
+
+.no-results {
+  text-align: center;
+  padding: 3rem;
+  color: #888;
+}
+
+.no-results p {
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+}
+
+.loading-text {
+  color: #888;
+  margin-top: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+@media (max-width: 768px) {
+  .filter-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .reset-btn {
+    align-self: auto;
+  }
+
+  .cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+.error-alert {
+  background-color: rgba(255, 99, 99, 0.15) !important;
+  border-left: 4px solid #ff6363 !important;
+  color: #ff9999 !important;
+}
+</style>
 
 <style scoped>
 * {

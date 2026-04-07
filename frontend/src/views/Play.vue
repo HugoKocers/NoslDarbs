@@ -92,6 +92,17 @@
             </div>
           </div>
 
+          <div v-if="unlockedCards.length > 0" class="unlocked-cards-section">
+            <h3>NEW CARDS UNLOCKED!</h3>
+            <div class="unlocked-cards-list">
+              <div v-for="card in unlockedCards" :key="card.card_id" class="unlocked-card-item">
+                <span class="card-name">{{ card.name }}</span>
+                <span class="card-rarity" :class="'rarity-' + card.rarity">{{ card.rarity }}</span>
+                <span class="card-bonus">+{{ card.bonus }} pts</span>
+              </div>
+            </div>
+          </div>
+
           <div class="result-actions">
             <button @click="resetGame" class="play-again-btn">
               <span>PLAY AGAIN</span>
@@ -128,7 +139,7 @@
 </template>
 
 <script>
-import { gameService } from '@/services/api'
+import { gameService, cardService } from '@/services/api'
 
 export default {
   name: 'Play',
@@ -143,6 +154,8 @@ export default {
       totalCards: 12,
       pointMultiplier: 1,
       gameCards: [],
+      flippedCardIds: [],
+      unlockedCards: [],
       topPlayers: [
         { name: 'SHADOW_STRIKER', points: 28500, games: 156, color: '#FFD60A' },
         { name: 'QUANTUM_MASTER', points: 27200, games: 143, color: '#00d4ff' },
@@ -153,21 +166,42 @@ export default {
     }
   },
   methods: {
-    startGame() {
+    async startGame() {
       this.isLoading = true
       this.gameStarted = true
       this.gameEnded = false
       this.sessionPoints = 0
       this.cardsFlipped = 0
       this.pointMultiplier = 1
+      this.flippedCardIds = []
+      this.unlockedCards = []
       
-      // Initialize cards
-      this.gameCards = Array.from({ length: this.totalCards }, (_, i) => ({
-        id: i,
-        flipped: false,
-        revealed: false,
-        result: this.generateRandomPoints()
-      }))
+      try {
+        // Fetch random cards from backend
+        const response = await cardService.getRandomCards(this.totalCards)
+        const randomCards = response.data.cards
+
+        // Initialize cards with actual data
+        this.gameCards = randomCards.map((card, i) => ({
+          id: card.id,
+          name: card.name,
+          rarity: card.rarity,
+          flipped: false,
+          revealed: false,
+          result: this.generateRandomPoints()
+        }))
+      } catch (err) {
+        console.error('Failed to fetch random cards:', err)
+        // Fallback to local generation
+        this.gameCards = Array.from({ length: this.totalCards }, (_, i) => ({
+          id: i + 1,
+          name: `Card ${i + 1}`,
+          rarity: 'common',
+          flipped: false,
+          revealed: false,
+          result: this.generateRandomPoints()
+        }))
+      }
       
       setTimeout(() => {
         this.isLoading = false
@@ -185,6 +219,11 @@ export default {
         card.revealed = true
         this.sessionPoints += card.result
         this.cardsFlipped += 1
+        
+        // Track flipped card ID for backend
+        if (!this.flippedCardIds.includes(card.id)) {
+          this.flippedCardIds.push(card.id)
+        }
         
         // Increase multiplier every 3 cards
         if (this.cardsFlipped % 3 === 0) {
@@ -218,16 +257,23 @@ export default {
       this.cardsFlipped = 0
       this.pointMultiplier = 1
       this.gameCards = []
+      this.flippedCardIds = []
+      this.unlockedCards = []
     },
     
     saveGameResult() {
-      // Save to backend
+      // Send game data with card IDs to backend
       gameService.endGame({
         points: this.sessionPoints,
         cards_flipped: this.cardsFlipped,
-        game_mode: 'rng'
+        game_mode: 'rng',
+        flipped_card_ids: this.flippedCardIds
       }).then(response => {
         console.log('Game saved:', response.data)
+        // Store unlocked cards for display
+        if (response.data.game_result.unlocked_cards) {
+          this.unlockedCards = response.data.game_result.unlocked_cards
+        }
       }).catch(err => console.error('Failed to save game:', err))
     }
   }
@@ -637,6 +683,99 @@ export default {
   font-weight: 900;
   color: #fff;
   text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.unlocked-cards-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.05), rgba(0, 102, 255, 0.05));
+  border: 2px solid #06D6A0;
+  border-radius: 8px;
+}
+
+.unlocked-cards-section h3 {
+  color: #06D6A0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  text-shadow: 0 0 15px #06D6A0;
+}
+
+.unlocked-cards-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.unlocked-card-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid #06D6A0;
+  border-radius: 4px;
+  animation: slide-in 0.5s ease-out;
+}
+
+.card-name {
+  color: #fff;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.card-rarity {
+  padding: 0.3rem 0.6rem;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rarity-common {
+  background: #A0A0A0;
+  color: #000;
+}
+
+.rarity-uncommon {
+  background: #06D6A0;
+  color: #000;
+}
+
+.rarity-rare {
+  background: #00A8E8;
+  color: #000;
+}
+
+.rarity-epic {
+  background: #9D4EDD;
+  color: #fff;
+}
+
+.rarity-legendary {
+  background: #FFD60A;
+  color: #000;
+}
+
+.card-bonus {
+  color: #06D6A0;
+  font-weight: 900;
+  font-size: 1.1rem;
+  text-shadow: 0 0 10px #06D6A0;
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .result-actions {

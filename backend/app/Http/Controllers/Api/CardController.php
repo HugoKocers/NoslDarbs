@@ -53,4 +53,18 @@ class CardController extends Controller
             'user_card' => $userCard,
         ]);
     }
+
+    public function random(Request $request)
+    {
+        $limit = $request->query('limit', 12);
+        
+        $cards = Card::inRandomOrder()
+            ->limit($limit)
+            ->get(['id', 'name', 'description', 'power', 'cost', 'element', 'rarity', 'image_url']);
+
+        return response()->json([
+            'status' => 'success',
+            'cards' => $cards
+        ]);
+    }
 }

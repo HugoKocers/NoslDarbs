@@ -116,11 +116,20 @@
     <div v-else class="cards-grid">
       <div v-for="card in filteredCards" :key="card.id" class="card-col">
         <div class="card-wrapper" :style="{ '--element-color': getElementColor(card.element) }">
-          <v-card class="game-card" :class="'element-' + card.element">
+          <div class="card-lock-overlay" v-if="!card.unlocked">
+            <div class="lock-icon">🔒</div>
+            <div class="lock-text">LOCKED</div>
+            <div class="lock-glow"></div>
+          </div>
+          <v-card class="game-card" :class="[
+            'element-' + card.element,
+            { 'card-locked': !card.unlocked }
+          ]">
             <v-img
               :src="card.image_url || 'https://images.unsplash.com/photo-1559056199-641a0ac8b3f2?w=400&h=500&fit=crop'"
               aspect-ratio="2/3"
               class="card-image"
+              :class="{ 'locked-image': !card.unlocked }"
             ></v-img>
             <v-card-title class="card-title">{{ card.name }}</v-card-title>
             <v-card-text class="card-text">
@@ -159,7 +168,7 @@
 </template>
 
 <script>
-import { cardService } from '@/services/api'
+import { gameService } from '@/services/api'
 
 export default {
   name: 'Cards',
@@ -229,6 +238,7 @@ export default {
         common: '#A0A0A0',
         uncommon: '#06D6A0',
         rare: '#00A8E8',
+        epic: '#9D4EDD',
         legendary: '#FFD60A'
       }
       return colors[rarity.toLowerCase()] || '#A0A0A0'
@@ -239,14 +249,14 @@ export default {
       this.filterRarity = ''
       this.sortBy = 'name'
     },
-    async fetchCards() {
+    async fetchCollection() {
       try {
         this.loading = true
         this.error = null
-        const response = await cardService.getAllCards()
-        this.cards = response.data.data || response.data
+        const response = await gameService.getCollection()
+        this.cards = response.data.collection || []
       } catch (err) {
-        this.error = 'Failed to load cards: ' + (err.response?.data?.message || err.message)
+        this.error = 'Failed to load collection: ' + (err.response?.data?.message || err.message)
         console.error(err)
       } finally {
         this.loading = false
@@ -254,7 +264,7 @@ export default {
     }
   },
   mounted() {
-    this.fetchCards()
+    this.fetchCollection()
   }
 }
 </script>
@@ -969,5 +979,102 @@ export default {
   .section-subtitle {
     font-size: 0.9rem;
   }
+}
+
+/* Locked Cards Styles */
+.card-wrapper {
+  position: relative;
+}
+
+.card-locked {
+  opacity: 0.5;
+  filter: grayscale(100%);
+}
+
+.locked-image {
+  opacity: 0.4;
+  filter: blur(2px) grayscale(100%);
+}
+
+.card-lock-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.lock-icon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  animation: float-icon 2s ease-in-out infinite;
+}
+
+.lock-text {
+  font-size: 1.5rem;
+  color: #a0a0a0;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-shadow: 0 0 20px rgba(160, 160, 160, 0.5);
+  animation: fade-text 1.5s ease-in-out infinite;
+}
+
+.lock-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 4px;
+  box-shadow: inset 0 0 30px rgba(160, 160, 160, 0.2),
+              0 0 20px rgba(160, 160, 160, 0.15);
+  animation: pulse-lock 2s ease-in-out infinite;
+}
+
+@keyframes float-icon {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes fade-text {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-lock {
+  0%, 100% {
+    box-shadow: inset 0 0 30px rgba(160, 160, 160, 0.2),
+                0 0 20px rgba(160, 160, 160, 0.15);
+  }
+  50% {
+    box-shadow: inset 0 0 40px rgba(160, 160, 160, 0.3),
+                0 0 30px rgba(160, 160, 160, 0.25);
+  }
+}
+
+/* Unlocked cards highlight */
+.game-card:not(.card-locked) {
+  transition: all 0.3s ease;
+}
+
+.game-card:not(.card-locked):hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
 }
 </style>

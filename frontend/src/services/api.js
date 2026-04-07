@@ -27,6 +27,9 @@ export const cardService = {
   },
   getUserCards() {
     return apiClient.get('/user/cards')
+  },
+  getRandomCards(limit = 12) {
+    return apiClient.get(`/cards/random/game?limit=${limit}`)
   }
 }
 
@@ -87,6 +90,9 @@ export const gameService = {
   },
   getGameStats() {
     return apiClient.get('/game/stats')
+  },
+  getCollection() {
+    return apiClient.get('/game/collection')
   }
 }
 

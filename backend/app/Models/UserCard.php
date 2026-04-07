@@ -13,6 +13,7 @@ class UserCard extends Model
         'user_id',
         'card_id',
         'quantity',
+        'unlocked_at',
     ];
 
     public function user()

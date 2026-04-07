@@ -27,6 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/cards', [CardController::class, 'index']);
     Route::get('/cards/{id}', [CardController::class, 'show']);
     Route::get('/user/cards', [CardController::class, 'getUserCards']);
+    Route::get('/cards/random/game', [CardController::class, 'random']);
 
     // Deck routes
     Route::apiResource('decks', DeckController::class);
@@ -35,6 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/game/start', [GameController::class, 'start']);
     Route::post('/game/end', [GameController::class, 'end']);
     Route::get('/game/stats', [GameController::class, 'stats']);
+    Route::get('/game/collection', [GameController::class, 'collection']);
 });
 
 // Public card browsing

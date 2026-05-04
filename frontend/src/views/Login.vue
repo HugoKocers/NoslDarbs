@@ -10,13 +10,13 @@
 
       <form @submit.prevent="handleLogin" class="auth-form">
         <div class="form-group">
-          <label for="email" class="form-label">Email Address</label>
+          <label for="email" class="form-label">{{ i18n.t.email }}</label>
           <input
             id="email"
             v-model="email"
             type="email"
             class="form-input"
-            placeholder="Enter your email"
+            :placeholder="`${i18n.t.email} ${i18n.t.login.toLowerCase()}`"
             required
             aria-label="Email address"
             aria-disabled="isLoading"
@@ -24,13 +24,13 @@
         </div>
 
         <div class="form-group">
-          <label for="password" class="form-label">Password</label>
+          <label for="password" class="form-label">{{ i18n.t.password }}</label>
           <input
             id="password"
             v-model="password"
             type="password"
             class="form-input"
-            placeholder="Enter your password"
+            :placeholder="`${i18n.t.password}`"
             required
             aria-label="Password"
             aria-disabled="isLoading"
@@ -47,14 +47,14 @@
           :disabled="authStore.isLoading"
           aria-busy="authStore.isLoading"
         >
-          <span v-if="!authStore.isLoading">LOGIN</span>
+          <span v-if="!authStore.isLoading">{{ i18n.t.signIn }}</span>
           <span v-else>SIGNING IN...</span>
         </button>
       </form>
 
       <div class="auth-footer">
-        <p>Don't have an account?
-          <router-link to="/signup" class="auth-link">Sign up here</router-link>
+        <p>{{ i18n.t.noAccount }}
+          <router-link to="/signup" class="auth-link">{{ i18n.t.createOne }}</router-link>
         </p>
       </div>
     </div>
@@ -65,9 +65,11 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import { useI18nStore } from '@/stores/i18nStore'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const i18n = useI18nStore()
 
 const email = ref('')
 const password = ref('')

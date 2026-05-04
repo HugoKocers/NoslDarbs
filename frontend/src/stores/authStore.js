@@ -88,6 +88,36 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const fetchGameStats = async () => {
+    if (!token.value) return
+    try {
+      const response = await axios.get(`${API_BASE}/game/stats`)
+      if (response.data.stats && user.value) {
+        user.value.totalGames = response.data.stats.total_games
+        user.value.totalPoints = response.data.stats.total_points
+        user.value.averageScore = response.data.stats.average_score
+        user.value.highestScore = response.data.stats.highest_score
+        user.value.level = response.data.stats.level
+        user.value.experience = response.data.stats.experience
+        user.value.cardsUnlockedCount = response.data.stats.cards_unlocked
+      }
+    } catch (err) {
+      console.error('Failed to fetch game stats:', err)
+    }
+  }
+
+  const fetchUserCards = async () => {
+    if (!token.value) return
+    try {
+      const response = await axios.get(`${API_BASE}/user/cards`)
+      if (user.value) {
+        user.value.userCards = response.data.data || response.data
+      }
+    } catch (err) {
+      console.error('Failed to fetch user cards:', err)
+    }
+  }
+
   return {
     user,
     token,
@@ -98,6 +128,8 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     login,
     logout,
-    fetchUser
+    fetchUser,
+    fetchGameStats,
+    fetchUserCards
   }
 })

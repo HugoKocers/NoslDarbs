@@ -40,7 +40,6 @@
           <form @submit.prevent="saveCard" class="admin-form">
             <div class="form-row">
               <input v-model="cardForm.name" type="text" placeholder="Card Name" required class="form-input" />
-              <input v-model="cardForm.power" type="number" placeholder="Power Level" required class="form-input" />
             </div>
             <div class="form-row">
               <select v-model="cardForm.element" required class="form-input">
@@ -70,17 +69,15 @@
                 <th role="columnheader">ID</th>
                 <th role="columnheader">Name</th>
                 <th role="columnheader">Element</th>
-                <th role="columnheader">Power</th>
                 <th role="columnheader">Rarity</th>
                 <th role="columnheader">Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="card in mockCards" :key="card.id" role="row">
+              <tr v-for="card in cards" :key="card.id" role="row">
                 <td>{{ card.id }}</td>
                 <td>{{ card.name }}</td>
                 <td>{{ card.element }}</td>
-                <td>{{ card.power }}</td>
                 <td>{{ card.rarity }}</td>
                 <td class="action-cell">
                   <button @click="editCard(card)" class="btn-edit" aria-label="Edit card">✎</button>
@@ -96,7 +93,7 @@
       <div v-show="activeTab === 'users'" class="tab-content">
         <div class="section-header">
           <h2>User Management</h2>
-          <span class="user-count">Total Users: {{ mockUsers.length }}</span>
+          <span class="user-count">Total Users: {{ users.length }}</span>
         </div>
 
         <div class="table-section">
@@ -112,14 +109,14 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="user in mockUsers" :key="user.id" role="row">
+              <tr v-for="user in users" :key="user.id" role="row">
                 <td>{{ user.id }}</td>
                 <td>{{ user.name }}</td>
                 <td>{{ user.email }}</td>
                 <td>
                   <span :class="['role-badge', user.role]">{{ user.role }}</span>
                 </td>
-                <td>{{ user.joined }}</td>
+                <td>{{ new Date(user.created_at).toLocaleDateString() }}</td>
                 <td class="action-cell">
                   <button @click="changeUserRole(user)" class="btn-edit" aria-label="Change user role">⚙️</button>
                   <button @click="deleteUser(user.id)" class="btn-delete" aria-label="Delete user">✕</button>
@@ -130,146 +127,95 @@
         </div>
       </div>
 
-      <!-- Battles Management -->
-      <div v-show="activeTab === 'battles'" class="tab-content">
-        <div class="section-header">
-          <h2>Battle Management</h2>
-          <span class="user-count">Total Battles: {{ mockBattles.length }}</span>
-        </div>
 
-        <div class="table-section">
-          <table class="admin-table" role="table">
-            <thead>
-              <tr role="row">
-                <th role="columnheader">ID</th>
-                <th role="columnheader">Player 1</th>
-                <th role="columnheader">Player 2</th>
-                <th role="columnheader">Winner</th>
-                <th role="columnheader">Status</th>
-                <th role="columnheader">Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="battle in mockBattles" :key="battle.id" role="row">
-                <td>{{ battle.id }}</td>
-                <td>{{ battle.player1 }}</td>
-                <td>{{ battle.player2 }}</td>
-                <td>{{ battle.winner }}</td>
-                <td>
-                  <span :class="['status-badge', battle.status]">{{ battle.status }}</span>
-                </td>
-                <td>{{ battle.date }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- System Statistics -->
-      <div v-show="activeTab === 'stats'" class="tab-content">
-        <div class="section-header">
-          <h2>System Statistics</h2>
-        </div>
-
-        <div class="stats-grid">
-          <div class="stat-box">
-            <div class="stat-number">{{ mockUsers.length }}</div>
-            <div class="stat-desc">Total Users</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-number">{{ mockCards.length }}</div>
-            <div class="stat-desc">Total Cards</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-number">{{ mockBattles.length }}</div>
-            <div class="stat-desc">Total Battles</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-number">{{ avgPower }}</div>
-            <div class="stat-desc">Avg Card Power</div>
-          </div>
-        </div>
-
-        <div class="log-section">
-          <h3>Recent Activity Log</h3>
-          <div class="activity-log">
-            <div v-for="(log, index) in activityLogs" :key="index" class="log-entry">
-              <span class="log-time">{{ log.time }}</span>
-              <span class="log-action">{{ log.action }}</span>
-              <span class="log-user">by {{ log.user }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
     </v-container>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import api from '@/services/api'
 
 const activeTab = ref('cards')
 const showCardForm = ref(false)
 const editingCard = ref(null)
+const loading = ref(false)
+const error = ref(null)
 
 const tabs = [
   { id: 'cards', name: 'Cards', icon: '🎴' },
-  { id: 'users', name: 'Users', icon: '👥' },
-  { id: 'battles', name: 'Battles', icon: '⚔️' },
-  { id: 'stats', name: 'Statistics', icon: '📊' }
+  { id: 'users', name: 'Users', icon: '👥' }
 ]
 
 const cardForm = ref({
   name: '',
-  power: '',
   element: '',
   rarity: '',
   description: ''
 })
 
-const mockCards = ref([
-  { id: 1, name: 'Inferno Dragon', power: 85, element: 'Fire', rarity: 'Legendary', description: 'Ancient fire dragon' },
-  { id: 2, name: 'Tsunami', power: 78, element: 'Water', rarity: 'Rare', description: 'Powerful water wave' },
-  { id: 3, name: 'Forest Guardian', power: 82, element: 'Nature', rarity: 'Rare', description: 'Nature protector' }
-])
+const cards = ref([])
+const users = ref([])
 
-const mockUsers = ref([
-  { id: 1, name: 'Admin', email: 'admin@cardquest.com', role: 'admin', joined: '2025-01-01' },
-  { id: 2, name: 'Player One', email: 'player1@cardquest.com', role: 'user', joined: '2025-01-15' },
-  { id: 3, name: 'Player Two', email: 'player2@cardquest.com', role: 'user', joined: '2025-02-01' }
-])
-
-const mockBattles = ref([
-  { id: 1, player1: 'Player One', player2: 'Player Two', winner: 'Player One', status: 'Completed', date: '2025-03-01' },
-  { id: 2, player1: 'Player One', player2: 'Admin', winner: 'Admin', status: 'Completed', date: '2025-03-02' }
-])
-
-const activityLogs = ref([
-  { time: '14:32', action: 'Card Created', user: 'Admin' },
-  { time: '14:15', action: 'User Registered', user: 'System' },
-  { time: '13:48', action: 'Battle Started', user: 'Player One' },
-  { time: '13:20', action: 'Card Edited', user: 'Admin' }
-])
-
-const avgPower = computed(() => {
-  if (mockCards.value.length === 0) return 0
-  const total = mockCards.value.reduce((sum, card) => sum + card.power, 0)
-  return (total / mockCards.value.length).toFixed(1)
-})
-
-const saveCard = () => {
-  if (editingCard.value) {
-    const index = mockCards.value.findIndex(c => c.id === editingCard.value.id)
-    if (index > -1) {
-      mockCards.value[index] = { ...mockCards.value[index], ...cardForm.value }
-    }
-  } else {
-    mockCards.value.push({
-      id: Math.max(...mockCards.value.map(c => c.id)) + 1,
-      ...cardForm.value
-    })
+// Fetch all cards
+const fetchCards = async () => {
+  try {
+    loading.value = true
+    const response = await api.get('/admin/cards')
+    cards.value = response.data.data
+    error.value = null
+  } catch (err) {
+    error.value = 'Failed to load cards'
+    console.error(err)
+  } finally {
+    loading.value = false
   }
-  resetCardForm()
+}
+
+// Fetch all users
+const fetchUsers = async () => {
+  try {
+    loading.value = true
+    const response = await api.get('/admin/users')
+    users.value = response.data.data
+    error.value = null
+  } catch (err) {
+    error.value = 'Failed to load users'
+    console.error(err)
+  } finally {
+    loading.value = false
+  }
+}
+
+// Save card (create or update)
+const saveCard = async () => {
+  try {
+    loading.value = true
+    error.value = null
+
+    const payload = {
+      name: cardForm.value.name,
+      element: cardForm.value.element,
+      rarity: cardForm.value.rarity,
+      description: cardForm.value.description
+    }
+
+    if (editingCard.value) {
+      // Update existing card
+      await api.put(`/admin/cards/${editingCard.value.id}`, payload)
+    } else {
+      // Create new card
+      await api.post('/admin/cards', payload)
+    }
+
+    await fetchCards()
+    resetCardForm()
+  } catch (err) {
+    error.value = err.response?.data?.message || 'Failed to save card'
+    console.error(err)
+  } finally {
+    loading.value = false
+  }
 }
 
 const editCard = (card) => {
@@ -278,23 +224,58 @@ const editCard = (card) => {
   showCardForm.value = true
 }
 
-const deleteCard = (id) => {
-  mockCards.value = mockCards.value.filter(c => c.id !== id)
+const deleteCard = async (id) => {
+  if (!confirm('Are you sure you want to delete this card?')) return
+
+  try {
+    loading.value = true
+    await api.delete(`/admin/cards/${id}`)
+    await fetchCards()
+  } catch (err) {
+    error.value = 'Failed to delete card'
+    console.error(err)
+  } finally {
+    loading.value = false
+  }
 }
 
 const resetCardForm = () => {
-  cardForm.value = { name: '', power: '', element: '', rarity: '', description: '' }
+  cardForm.value = { name: '', element: '', rarity: '', description: '' }
   editingCard.value = null
   showCardForm.value = false
 }
 
-const changeUserRole = (user) => {
-  user.role = user.role === 'user' ? 'admin' : 'user'
+const changeUserRole = async (user) => {
+  try {
+    const newRole = user.role === 'user' ? 'admin' : 'user'
+    await api.put(`/admin/users/${user.id}/role`, { role: newRole })
+    user.role = newRole
+  } catch (err) {
+    error.value = 'Failed to update user role'
+    console.error(err)
+  }
 }
 
-const deleteUser = (id) => {
-  mockUsers.value = mockUsers.value.filter(u => u.id !== id)
+const deleteUser = async (id) => {
+  if (!confirm('Are you sure you want to delete this user?')) return
+
+  try {
+    loading.value = true
+    await api.delete(`/admin/users/${id}`)
+    await fetchUsers()
+  } catch (err) {
+    error.value = 'Failed to delete user'
+    console.error(err)
+  } finally {
+    loading.value = false
+  }
 }
+
+// Load data on mount
+onMounted(async () => {
+  await fetchCards()
+  await fetchUsers()
+})
 </script>
 
 <style scoped>

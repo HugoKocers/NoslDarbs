@@ -10,13 +10,13 @@
 
       <form @submit.prevent="handleSignup" class="auth-form">
         <div class="form-group">
-          <label for="name" class="form-label">Player Name</label>
+          <label for="name" class="form-label">{{ i18n.t.username }}</label>
           <input
             id="name"
             v-model="name"
             type="text"
             class="form-input"
-            placeholder="Enter your player name"
+            :placeholder="`${i18n.t.username}`"
             required
             minlength="3"
             maxlength="255"
@@ -26,13 +26,13 @@
         </div>
 
         <div class="form-group">
-          <label for="email" class="form-label">Email Address</label>
+          <label for="email" class="form-label">{{ i18n.t.email }}</label>
           <input
             id="email"
             v-model="email"
             type="email"
             class="form-input"
-            placeholder="Enter your email"
+            :placeholder="`${i18n.t.email}`"
             required
             aria-label="Email address"
             aria-disabled="authStore.isLoading"
@@ -40,13 +40,13 @@
         </div>
 
         <div class="form-group">
-          <label for="password" class="form-label">Password</label>
+          <label for="password" class="form-label">{{ i18n.t.password }}</label>
           <input
             id="password"
             v-model="password"
             type="password"
             class="form-input"
-            placeholder="Minimum 8 characters"
+            :placeholder="`${i18n.t.password}`"
             required
             minlength="8"
             aria-label="Password"
@@ -56,13 +56,13 @@
         </div>
 
         <div class="form-group">
-          <label for="passwordConfirm" class="form-label">Confirm Password</label>
+          <label for="passwordConfirm" class="form-label">{{ i18n.t.confirmPassword }}</label>
           <input
             id="passwordConfirm"
             v-model="passwordConfirm"
             type="password"
             class="form-input"
-            placeholder="Confirm your password"
+            :placeholder="`${i18n.t.confirmPassword}`"
             required
             minlength="8"
             aria-label="Confirm password"
@@ -80,14 +80,14 @@
           :disabled="authStore.isLoading || password !== passwordConfirm"
           aria-busy="authStore.isLoading"
         >
-          <span v-if="!authStore.isLoading">CREATE ACCOUNT</span>
-          <span v-else>CREATING ACCOUNT...</span>
+          <span v-if="!authStore.isLoading">{{ i18n.t.signUp }}</span>
+          <span v-else>{{ i18n.t.signUp }}...</span>
         </button>
       </form>
 
       <div class="auth-footer">
-        <p>Already have an account?
-          <router-link to="/login" class="auth-link">Sign in here</router-link>
+        <p>{{ i18n.t.alreadyHaveAccount }}
+          <router-link to="/login" class="auth-link">{{ i18n.t.login }}</router-link>
         </p>
       </div>
     </div>
@@ -98,9 +98,11 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import { useI18nStore } from '@/stores/i18nStore'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const i18n = useI18nStore()
 
 const name = ref('')
 const email = ref('')

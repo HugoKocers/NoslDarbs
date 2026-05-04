@@ -11,36 +11,36 @@
         <div class="hero-text-section">
           <div class="accent-line"></div>
           <h1 class="hero-title">CardQuest</h1>
-          <h2 class="hero-subtitle">TACTICAL ARENA</h2>
+          <h2 class="hero-subtitle">{{ i18n.t.infiniteFlipGame }}</h2>
           <p class="hero-description">
-            Enter the neural battlegrounds. Master the quantum cards. Dominate the arena.
+            {{ i18n.t.flipCards }}
           </p>
           
           <div class="button-group">
             <router-link to="/cards" class="neon-btn btn-primary">
-              <span class="btn-text">ACCESS CARD DATABASE</span>
+              <span class="btn-text">{{ i18n.t.viewCollection }}</span>
               <span class="btn-icon">→</span>
             </router-link>
             <router-link to="/play" class="neon-btn btn-secondary">
-              <span class="btn-text">INITIATE BATTLE</span>
-              <span class="btn-icon">⚡</span>
+              <span class="btn-text">{{ i18n.t.playGame }}</span>
+              <span class="btn-icon">🎴</span>
             </router-link>
           </div>
 
           <div class="stats-row">
             <div class="stat-item">
-              <span class="stat-number">500+</span>
-              <span class="stat-label">CARDS</span>
+              <span class="stat-number">{{ i18n.t.cardsCount }}</span>
+              <span class="stat-label">{{ i18n.t.cardsLabel }}</span>
             </div>
             <div class="divider"></div>
             <div class="stat-item">
-              <span class="stat-number">∞</span>
-              <span class="stat-label">STRATEGIES</span>
+              <span class="stat-number">{{ i18n.t.raritiesCount }}</span>
+              <span class="stat-label">{{ i18n.t.raritiesLabel }}</span>
             </div>
             <div class="divider"></div>
             <div class="stat-item">
-              <span class="stat-number">7/7</span>
-              <span class="stat-label">ELEMENTS</span>
+              <span class="stat-number">{{ i18n.t.flipsCount }}</span>
+              <span class="stat-label">{{ i18n.t.flipsLabel }}</span>
             </div>
           </div>
         </div>
@@ -65,8 +65,8 @@
       <v-container>
         <div class="section-header">
           <div class="header-line"></div>
-          <h2 class="section-title">ELITE ARSENAL</h2>
-          <p class="section-desc">Featured Tactical Units</p>
+          <h2 class="section-title">{{ i18n.t.featuredCards }}</h2>
+          <p class="section-desc">{{ i18n.t.discoverCards }}</p>
         </div>
 
         <div class="cards-grid">
@@ -74,16 +74,11 @@
             <div class="card-inner">
               <div class="card-glow"></div>
               <div class="card-header">
-                <span class="card-id">{{ String(card.id).padStart(3, '0') }}</span>
                 <span class="card-element">{{ ['FIRE', 'WATER', 'NATURE', 'LIGHTNING', 'DARK', 'LIGHT'][index % 6] }}</span>
               </div>
               <div class="card-body">
                 <h3 class="card-name">{{ card.name }}</h3>
-                <p class="card-desc">{{ card.description }}</p>
-                <div class="card-footer">
-                  <span class="power-display">⚡ PWR: {{ card.power }}</span>
-                  <span class="rarity">★★★</span>
-                </div>
+                <p class="card-rarity">Rarity: Common</p>
               </div>
             </div>
           </div>
@@ -95,8 +90,8 @@
       <v-container>
         <div class="section-header">
           <div class="header-line"></div>
-          <h2 class="section-title">CORE SYSTEMS</h2>
-          <p class="section-desc">Advanced Gameplay Features</p>
+          <h2 class="section-title">{{ i18n.t.howItWorks }}</h2>
+          <p class="section-desc">{{ i18n.t.simpleAndFun }}</p>
         </div>
 
         <div class="features-grid">
@@ -111,10 +106,10 @@
 
     <section class="cta-section">
       <div class="cta-content">
-        <h2 class="cta-title">READY TO DOMINATE?</h2>
-        <p class="cta-subtitle">Join the neural network and become a legendary card master</p>
-        <router-link to="/cards" class="cta-btn">
-          <span>DEPLOY NOW</span>
+        <h2 class="cta-title">{{ i18n.t.startFlipping }}</h2>
+        <p class="cta-subtitle">{{ i18n.t.flipDiscoverEnjoy }}</p>
+        <router-link to="/play" class="cta-btn">
+          <span>{{ i18n.t.playNow }}</span>
           <span class="glow"></span>
         </router-link>
       </div>
@@ -123,56 +118,23 @@
     <section class="lore-section">
       <div class="lore-container">
         <div class="lore-sidebar">
-          <div class="lore-logo">LORE</div>
-          <div class="lore-icons">
-            <div class="lore-icon palette-icon"></div>
-            <div class="lore-icon struct-icon"></div>
-          </div>
-        </div>
-
-        <div class="spacecraft-viewer">
-          <div class="hud-frame">
-            <!-- Inner rotating ring 1 -->
+          <div class="lore-animation-container">
             <div class="rotating-ring ring-1"></div>
-            
-            <!-- Outer rotating ring 2 -->
             <div class="rotating-ring ring-2"></div>
-            
-            <!-- Center spacecraft -->
-            <div class="hud-center">
-              <div class="spacecraft-container">
-                <div class="spacecraft-model"></div>
-              </div>
-            </div>
+            <div class="lore-logo">ABOUT</div>
           </div>
         </div>
 
         <div class="lore-content">
-          <h3 class="lore-title">PIONEER-CLASS CRUISER</h3>
+          <h3 class="lore-title">{{ i18n.t.simpleInfinite }}</h3>
           <p class="lore-text">
-            The Pioneer-Class Cruiser represents humanity's most advanced deep-space exploration vessel. 
-            Engineered with cutting-edge quantum propulsion systems and adaptive hull technology, it serves 
-            as the flagship of the CardQuest tactical fleet.
+            {{ i18n.t.gameAbout }}
           </p>
           <p class="lore-tech">
-            <span class="tech-label">DESIGNATION:</span> PSEC-001<br>
-            <span class="tech-label">CREW CAPACITY:</span> 250+<br>
-            <span class="tech-label">POWER CORE:</span> Quantum Fusion Reactor
+            <span class="tech-label">{{ i18n.t.gameplay }}:</span> {{ i18n.t.rngCardFlip }}<br>
+            <span class="tech-label">{{ i18n.t.cardsLabel }}:</span> 30+ {{ i18n.t.cardsCountLabel }}<br>
+            <span class="tech-label">{{ i18n.t.elementsLabel }}:</span> 6 {{ i18n.t.elementsLabel }}
           </p>
-
-          <div class="nav-controls">
-            <button class="nav-btn prev-btn" aria-label="Previous spacecraft">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-            </button>
-            <span class="page-indicator">1 / 6</span>
-            <button class="nav-btn next-btn" aria-label="Next spacecraft">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
-          </div>
         </div>
       </div>
     </section>
@@ -180,110 +142,80 @@
 </template>
 
 <script>
+import { useI18nStore } from '@/stores/i18nStore'
+
 export default {
   name: 'Home',
+  setup() {
+    const i18n = useI18nStore()
+    return { i18n }
+  },
   data() {
     return {
       featuredCards: [
         {
           id: 1,
           name: 'Inferno Dragon',
-          description: 'Channel the ancient flames of destruction',
-          power: 85
+          description: 'Legendary fire guardian'
         },
         {
           id: 2,
           name: 'Tsunami',
-          description: 'Command waters with precision and force',
-          power: 78
+          description: 'Powerful water force'
         },
         {
           id: 3,
           name: 'Forest Guardian',
-          description: 'Call upon nature\'s protective essence',
-          power: 82
+          description: 'Nature protector'
         },
         {
           id: 4,
           name: 'Electric Dragon',
-          description: 'Strike with raw electrical power',
-          power: 80
+          description: 'Lightning striker'
         },
         {
           id: 5,
           name: 'Necromancer',
-          description: 'Summon dark forces from beyond',
-          power: 79
+          description: 'Dark summoner'
         },
         {
           id: 6,
           name: 'Angel Guardian',
-          description: 'Harness divine light and protection',
-          power: 81
+          description: 'Light keeper'
         }
       ],
       features: [
         {
           id: 1,
           icon: '🎴',
-          title: 'DYNAMIC DECK BUILDING',
-          description: 'Craft powerful combinations with 7 unique elemental systems'
+          title: this.i18n.t.flipDiscover || 'FLIP & DISCOVER',
+          description: this.i18n.t.flipDiscoverDesc || 'Flip cards to earn random points and discover new cards'
         },
         {
           id: 2,
-          icon: '⚔️',
-          title: 'TACTICAL BATTLES',
-          description: 'Engage in strategic card-based combat with real opponents'
+          icon: '♾️',
+          title: this.i18n.t.infiniteGameplay || 'INFINITE GAMEPLAY',
+          description: this.i18n.t.infiniteGameplayDesc || 'Endlessly replayable card flipping with no limits'
         },
         {
           id: 3,
           icon: '✨',
-          title: 'RARITY SYSTEM',
-          description: 'Unlock rare and legendary cards to strengthen your arsenal'
+          title: this.i18n.t.buildCollection || 'BUILD COLLECTION',
+          description: this.i18n.t.buildCollectionDesc || 'Unlock cards through gameplay and track your discoveries'
         },
         {
           id: 4,
-          icon: '🏆',
-          title: 'RANKED LEAGUES',
-          description: 'Climb the leaderboards and prove your mastery'
-        }
-      ]
-    }
-  },
-  data() {
-    return {
-      features: [
-        {
-          id: 1,
-          icon: '🎴',
-          title: 'DYNAMIC DECK BUILDING',
-          description: 'Craft powerful combinations with 7 unique elemental systems'
-        },
-        {
-          id: 2,
-          icon: '⚔️',
-          title: 'TACTICAL BATTLES',
-          description: 'Engage in strategic card-based combat with real opponents'
-        },
-        {
-          id: 3,
-          icon: '✨',
-          title: 'RARITY SYSTEM',
-          description: 'Unlock rare and legendary cards to strengthen your arsenal'
-        },
-        {
-          id: 4,
-          icon: '🏆',
-          title: 'RANKED LEAGUES',
-          description: 'Climb the leaderboards and prove your mastery'
+          icon: '📊',
+          title: this.i18n.t.trackProgressTitle || 'TRACK PROGRESS',
+          description: this.i18n.t.trackProgressDesc || 'Monitor your scores, games played, and collection status'
         }
       ]
     }
   },
   methods: {
     getElementColor(index) {
-      const colors = ['#FF6B35', '#00A8E8', '#06D6A0', '#FFD60A', '#9D4EDD', '#3A86FF']
-      return colors[index % colors.length]
+      const colors = ['#FF6B35', '#00A8E8', '#06D6A0', '#FFD60A', '#9D4EDD', '#3A86FF'];
+      return colors[index % colors.length];
     }
   }
 }
@@ -743,13 +675,6 @@ h1, h2, h3, h4, h5, h6 {
   border-top: 1px solid rgba(0, 212, 255, 0.2);
 }
 
-.power-display {
-  font-size: 1.1rem;
-  color: var(--element-color);
-  font-weight: 700;
-  text-shadow: 0 0 10px var(--element-color);
-}
-
 .rarity {
   color: #FFD60A;
   font-size: 1rem;
@@ -1030,8 +955,8 @@ h1, h2, h3, h4, h5, h6 {
 
 .lore-container {
   display: grid;
-  grid-template-columns: 120px 1fr 400px;
-  gap: 3rem;
+  grid-template-columns: 450px 1fr;
+  gap: 4rem;
   max-width: 1400px;
   width: 100%;
   align-items: center;
@@ -1047,6 +972,16 @@ h1, h2, h3, h4, h5, h6 {
   padding-top: 2rem;
 }
 
+.lore-animation-container {
+  position: relative;
+  width: 400px;
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
 .lore-logo {
   font-size: 1.2rem;
   font-weight: 900;
@@ -1054,8 +989,12 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: 3px;
   writing-mode: vertical-rl;
   text-orientation: mixed;
-  transform: rotate(180deg);
   text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  position: absolute;
+  z-index: 4;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(180deg);
 }
 
 .lore-icons {
@@ -1162,7 +1101,7 @@ h1, h2, h3, h4, h5, h6 {
     50% 100%
   );
   animation: spinRing1 8s linear infinite;
-  opacity: 0.7;
+  opacity: 0.8;
   z-index: 1;
 }
 
@@ -1185,7 +1124,7 @@ h1, h2, h3, h4, h5, h6 {
     0% 100%
   );
   animation: spinRing2 12s linear infinite;
-  opacity: 0.6;
+  opacity: 0.7;
   z-index: 1;
 }
 

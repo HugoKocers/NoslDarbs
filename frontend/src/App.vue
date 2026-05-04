@@ -10,17 +10,16 @@
         </div>
         <v-spacer></v-spacer>
         <nav class="navbar-nav" role="menubar">
-          <router-link to="/" class="nav-link" active-class="active" role="menuitem">Home</router-link>
-          <router-link to="/cards" class="nav-link" active-class="active" role="menuitem">Cards</router-link>
+          <router-link to="/" class="nav-link" active-class="active" role="menuitem">{{ i18n.t.home }}</router-link>
+          <router-link to="/cards" class="nav-link" active-class="active" role="menuitem">{{ i18n.t.cards }}</router-link>
           
           <!-- Public/Authenticated routes -->
           <template v-if="authStore.isAuthenticated">
-            <router-link to="/play" class="nav-link" active-class="active" role="menuitem">Play</router-link>
-            <router-link to="/profile" class="nav-link" active-class="active" role="menuitem">Profile</router-link>
-            <router-link to="/statistics" class="nav-link" active-class="active" role="menuitem">Stats</router-link>
+            <router-link to="/play" class="nav-link" active-class="active" role="menuitem">{{ i18n.t.play }}</router-link>
+            <router-link to="/profile" class="nav-link" active-class="active" role="menuitem">{{ i18n.t.profile }}</router-link>
             
             <!-- Admin link -->
-            <router-link v-if="authStore.isAdmin" to="/admin" class="nav-link nav-admin" active-class="active" role="menuitem">Admin</router-link>
+            <router-link v-if="authStore.isAdmin" to="/admin" class="nav-link nav-admin" active-class="active" role="menuitem">{{ i18n.t.admin }}</router-link>
             
             <!-- User menu dropdown -->
             <div class="nav-user-menu">
@@ -30,18 +29,17 @@
                 <span class="menu-icon">▼</span>
               </button>
               <div v-if="showUserMenu" class="dropdown-menu" role="menu">
-                <router-link to="/profile" class="menu-item" role="menuitem">My Profile</router-link>
-                <router-link to="/statistics" class="menu-item" role="menuitem">Statistics</router-link>
+                <router-link to="/profile" class="menu-item" role="menuitem">{{ i18n.t.myProfile }}</router-link>
                 <div class="menu-divider"></div>
-                <button @click="handleLogout" class="menu-item logout-item" role="menuitem">Logout</button>
+                <button @click="handleLogout" class="menu-item logout-item" role="menuitem">{{ i18n.t.logout }}</button>
               </div>
             </div>
           </template>
           
           <!-- Unauthenticated links -->
           <template v-else>
-            <router-link to="/login" class="nav-link nav-login" active-class="active" role="menuitem">Login</router-link>
-            <router-link to="/signup" class="nav-link nav-signup" active-class="active" role="menuitem">Sign Up</router-link>
+            <router-link to="/login" class="nav-link nav-login" active-class="active" role="menuitem">{{ i18n.t.login }}</router-link>
+            <router-link to="/signup" class="nav-link nav-signup" active-class="active" role="menuitem">{{ i18n.t.signup }}</router-link>
           </template>
         </nav>
       </v-container>
@@ -55,36 +53,41 @@
       <v-container>
         <div class="footer-content">
           <div class="footer-section">
-            <h3>CardQuest</h3>
-            <p>Master the cards, dominate the arena</p>
+            <h3>{{ i18n.t.cardquest }}</h3>
+            <p>{{ i18n.t.dominateArena }}</p>
           </div>
           <div class="footer-section">
-            <h4>Quick Links</h4>
+            <h4>{{ i18n.t.quickLinks }}</h4>
             <ul>
-              <li><router-link to="/">Home</router-link></li>
-              <li><router-link to="/cards">Cards</router-link></li>
-              <li><router-link to="/play">Play</router-link></li>
+              <li><router-link to="/">{{ i18n.t.home }}</router-link></li>
+              <li><router-link to="/cards">{{ i18n.t.cards }}</router-link></li>
+              <li><router-link to="/play">{{ i18n.t.play }}</router-link></li>
             </ul>
           </div>
           <div class="footer-section">
-            <h4>Game Info</h4>
+            <h4>{{ i18n.t.gameInfo }}</h4>
             <ul>
-              <li><a href="#">Rules</a></li>
-              <li><a href="#">Strategy Guide</a></li>
-              <li><a href="#">FAQ</a></li>
+              <li><a href="#">{{ i18n.t.rules }}</a></li>
+              <li><a href="#">{{ i18n.t.strategyGuide }}</a></li>
+              <li><a href="#">{{ i18n.t.faq }}</a></li>
             </ul>
           </div>
           <div class="footer-section">
-            <h4>Community</h4>
+            <h4>{{ i18n.t.community }}</h4>
             <ul>
-              <li><a href="#">Discord</a></li>
-              <li><a href="#">Twitter</a></li>
-              <li><a href="#">GitHub</a></li>
+              <li><a href="#">{{ i18n.t.discord }}</a></li>
+              <li><a href="#">{{ i18n.t.twitter }}</a></li>
+              <li><a href="#">{{ i18n.t.github }}</a></li>
             </ul>
           </div>
         </div>
         <div class="footer-bottom">
-          <p>&copy; 2026 CardQuest. Made by Hugo.</p>
+          <div class="footer-bottom-content">
+            <p>{{ i18n.t.copyright }}</p>
+            <button @click="toggleLanguage" class="language-toggle" :title="`Switch to ${i18n.language === 'EN' ? 'Latvian' : 'English'}`">
+              {{ i18n.language === 'EN' ? '🇬🇧 EN' : '🇱🇻 LV' }}
+            </button>
+          </div>
         </div>
       </v-container>
     </footer>
@@ -95,15 +98,21 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import { useI18nStore } from '@/stores/i18nStore'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const i18n = useI18nStore()
 const showUserMenu = ref(false)
 
 const handleLogout = async () => {
   await authStore.logout()
   showUserMenu.value = false
   router.push('/')
+}
+
+const toggleLanguage = () => {
+  i18n.setLanguage(i18n.language === 'EN' ? 'LV' : 'EN')
 }
 </script>
 
@@ -282,8 +291,8 @@ const handleLogout = async () => {
 
 .nav-user-menu {
   position: relative;
-  z-index: 2;
-  overflow: visible;
+  z-index: 10000;
+  overflow: visible !important;
 }
 
 .user-btn {
@@ -322,16 +331,16 @@ const handleLogout = async () => {
 }
 
 .dropdown-menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 0.5rem;
+  position: fixed;
+  top: auto;
+  right: 1rem;
+  margin-top: 4.5rem;
   background: linear-gradient(135deg, rgba(0, 20, 50, 0.95), rgba(10, 8, 32, 0.95));
   border: 2px solid #00d4ff;
   border-radius: 4px;
   box-shadow: 0 4px 20px rgba(0, 212, 255, 0.2);
   min-width: 200px;
-  z-index: 10001;
+  z-index: 10002;
   animation: slideDown 0.2s ease;
 }
 
@@ -438,11 +447,40 @@ const handleLogout = async () => {
 }
 
 .footer-bottom {
-  text-align: center;
   padding-top: 2rem;
   border-top: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+.footer-bottom-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.footer-bottom-content p {
   color: #666;
   font-size: 0.85rem;
+  margin: 0;
+}
+
+.language-toggle {
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid #00d4ff;
+  border-radius: 4px;
+  color: #00d4ff;
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.language-toggle:hover {
+  background: rgba(0, 212, 255, 0.2);
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
 }
 
 @media (max-width: 768px) {
@@ -481,6 +519,11 @@ const handleLogout = async () => {
   .footer-content {
     grid-template-columns: 1fr;
     gap: 1.5rem;
+  }
+
+  .footer-bottom-content {
+    flex-direction: column;
+    gap: 1rem;
   }
 }
 </style>

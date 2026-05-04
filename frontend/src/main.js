@@ -37,17 +37,28 @@ app.use(vuetify)
 
 app.mount('#app')
 
-// Register Service Worker for PWA support
+// Register Service Worker for PWA support (production only)
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(
-      (registration) => {
-        console.log('ServiceWorker registration successful:', registration.scope)
-      },
-      (err) => {
-        console.log('ServiceWorker registration failed: ', err)
-      }
-    )
-  })
+  if (import.meta.env.MODE === 'development') {
+    // Unregister service workers in development to avoid caching issues
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      registrations.forEach((registration) => {
+        registration.unregister()
+        console.log('ServiceWorker unregistered for development')
+      })
+    })
+  } else {
+    // Register in production
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').then(
+        (registration) => {
+          console.log('ServiceWorker registration successful:', registration.scope)
+        },
+        (err) => {
+          console.log('ServiceWorker registration failed: ', err)
+        }
+      )
+    })
+  }
 }
 

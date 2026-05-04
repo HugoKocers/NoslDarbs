@@ -1,8 +1,8 @@
 <template>
   <v-container class="cards-container py-12">
     <div class="header-section">
-      <h1 class="text-h3 mb-2 section-title">Card Collection</h1>
-      <p class="section-subtitle">Browse and manage your arsenal</p>
+      <h1 class="text-h3 mb-2 section-title">{{ i18n.t.allCards }}</h1>
+      <p class="section-subtitle">{{ i18n.t.browseCollection }}</p>
     </div>
     
     <!-- Search and Filters -->
@@ -68,10 +68,7 @@
             aria-label="Sort cards"
           >
             <option value="name">Name (A-Z)</option>
-            <option value="power-desc">Power (High to Low)</option>
-            <option value="power-asc">Power (Low to High)</option>
-            <option value="cost-desc">Cost (High to Low)</option>
-            <option value="cost-asc">Cost (Low to High)</option>
+            <option value="rarity">Rarity</option>
           </select>
         </div>
 
@@ -133,7 +130,6 @@
             ></v-img>
             <v-card-title class="card-title">{{ card.name }}</v-card-title>
             <v-card-text class="card-text">
-              <p class="card-description">{{ card.description }}</p>
               <div class="card-stats">
                 <div class="stat-chip element-badge" :style="{ 'background-color': getElementColor(card.element), 'box-shadow': `0 0 15px ${getElementColor(card.element)}` }">
                   <span class="stat-icon">⚡</span>
@@ -144,22 +140,7 @@
                   {{ card.rarity }}
                 </div>
               </div>
-              <div class="power-cost">
-                <div class="stat-box power">
-                  <span class="stat-label">POWER</span>
-                  <span class="stat-value">{{ card.power }}</span>
-                </div>
-                <div class="stat-box cost">
-                  <span class="stat-label">COST</span>
-                  <span class="stat-value">{{ card.cost }}</span>
-                </div>
-              </div>
             </v-card-text>
-            <v-card-actions>
-              <v-btn size="small" class="action-btn" :style="{ '--element-color': getElementColor(card.element) }">
-                <span class="btn-icon">➕</span> Add to Deck
-              </v-btn>
-            </v-card-actions>
           </v-card>
         </div>
       </div>
@@ -169,9 +150,14 @@
 
 <script>
 import { gameService } from '@/services/api'
+import { useI18nStore } from '@/stores/i18nStore'
 
 export default {
   name: 'Cards',
+  setup() {
+    const i18n = useI18nStore()
+    return { i18n }
+  },
   data() {
     return {
       cards: [],
@@ -205,14 +191,10 @@ export default {
       // Apply sorting
       return filtered.sort((a, b) => {
         switch (this.sortBy) {
-          case 'power-desc':
-            return b.power - a.power
-          case 'power-asc':
-            return a.power - b.power
-          case 'cost-desc':
-            return b.cost - a.cost
-          case 'cost-asc':
-            return a.cost - b.cost
+          case 'rarity': {
+            const rarityOrder = { Common: 0, Uncommon: 1, Rare: 2, Epic: 3, Legendary: 4 }
+            return (rarityOrder[b.rarity] || 0) - (rarityOrder[a.rarity] || 0)
+          }
           case 'name':
           default:
             return a.name.localeCompare(b.name)
@@ -264,6 +246,10 @@ export default {
     }
   },
   mounted() {
+    this.fetchCollection()
+  },
+  activated() {
+    // Refresh collection every time the page is activated (navigated to)
     this.fetchCollection()
   }
 }
@@ -896,44 +882,6 @@ export default {
 
 .stat-icon {
   font-size: 0.9rem;
-}
-
-.power-cost {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  margin-top: 1rem;
-}
-
-.stat-box {
-  background: linear-gradient(135deg, rgba(0, 212, 255, 0.05), rgba(0, 102, 255, 0.05));
-  border: 1px solid rgba(0, 212, 255, 0.2);
-  border-radius: 4px;
-  padding: 0.75rem;
-  text-align: center;
-  transition: all 0.3s ease;
-}
-
-.stat-box:hover {
-  border-color: rgba(0, 212, 255, 0.5);
-  box-shadow: 0 0 10px rgba(0, 212, 255, 0.15);
-}
-
-.stat-label {
-  display: block;
-  color: #6688cc;
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 0.25rem;
-}
-
-.stat-value {
-  display: block;
-  color: #00d4ff;
-  font-size: 1.5rem;
-  font-weight: 900;
-  text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
 
 .action-btn {

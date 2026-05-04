@@ -5,7 +5,7 @@
     <v-container class="play-content">
       <section class="arena-header">
         <h1 class="arena-title">CARD FLIP ARENA</h1>
-        <p class="arena-subtitle">Flip cards and earn points based on fortune and chance</p>
+        <p class="arena-subtitle">Flip cards and earn points. Duplicates count but don't unlock twice.</p>
         <div class="accent-line"></div>
       </section>
 
@@ -13,9 +13,9 @@
       <section v-if="!gameStarted" class="start-game-section">
         <div class="start-card">
           <h2>READY TO PLAY?</h2>
-          <p>Flip cards to earn random points. The more you flip, the more you earn!</p>
+          <p>Flip cards to earn points and discover new cards for your collection!</p>
           <button @click="startGame" class="start-btn" :disabled="isLoading">
-            <span v-if="!isLoading">START GAME</span>
+            <span v-if="!isLoading">PLAY GAME</span>
             <span v-else>LOADING...</span>
             <span class="arrow">→</span>
           </button>
@@ -29,39 +29,52 @@
             <span class="score-label">SESSION POINTS</span>
             <span class="score-value">{{ sessionPoints }}</span>
           </div>
-          <div class="cards-left">
-            <span class="left-label">CARDS FLIPPED</span>
-            <span class="left-value">{{ cardsFlipped }}/{{ totalCards }}</span>
+          <div class="cards-flipped-display">
+            <span class="flipped-label">CARDS FLIPPED</span>
+            <span class="flipped-value">{{ cardsFlipped }}</span>
           </div>
-          <div class="multiplier" v-if="pointMultiplier > 1">
-            <span class="mult-label">MULTIPLIER</span>
-            <span class="mult-value">{{ pointMultiplier }}x</span>
+          <div class="new-cards-display">
+            <span class="new-label">NEW CARDS</span>
+            <span class="new-value">{{ newCardsCount }}</span>
           </div>
         </div>
 
-        <div class="cards-grid">
-          <div 
-            v-for="(card, idx) in gameCards" 
-            :key="idx"
-            :class="['card-item', { flipped: card.flipped, revealed: card.revealed }]"
-            @click="flipCard(idx)"
-            :style="{ '--card-delay': idx * 0.05 + 's' }"
-          >
-            <div class="card-inner">
-              <div class="card-front">
-                <span class="card-emoji">🎴</span>
-                <span class="card-number">{{ idx + 1 }}</span>
-              </div>
-              <div class="card-back">
-                <span class="card-result" :class="'result-' + card.result">
-                  {{ card.result >= 0 ? '+' : '' }}{{ card.result }}
-                </span>
+        <!-- Card Table Grid -->
+        <div class="card-table">
+          <div v-for="(card, index) in tableCards" :key="index" class="card-slot">
+            <div 
+              :class="['table-card', { 
+                flipped: card.flipped,
+                'is-duplicate': card.isDuplicate 
+              }]"
+              @click="flipTableCard(index)"
+            >
+              <div class="card-inner">
+                <!-- Front (unflipped) -->
+                <div class="card-front">
+                  <span class="card-back-emoji">🎴</span>
+                </div>
+                <!-- Back (flipped) -->
+                <div class="card-back" :style="{ borderColor: getElementColor(card.element) }">
+                  <div class="card-content">
+                    <div class="card-name">{{ card.name }}</div>
+                    <div class="card-rarity" :class="'rarity-' + card.rarity.toLowerCase()">
+                      {{ card.rarity }}
+                    </div>
+                    <div class="card-points" v-if="card.flipped">+{{ card.points }}</div>
+                    <div class="duplicate-badge" v-if="card.flipped && card.isDuplicate">DUPLICATE</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         <div class="game-actions">
+          <button @click="drawNewCards" class="draw-btn">
+            <span>DRAW 6 NEW CARDS</span>
+            <span class="arrow">→</span>
+          </button>
           <button @click="endGame" class="end-game-btn">
             <span>END GAME</span>
             <span class="arrow">→</span>
@@ -72,9 +85,9 @@
       <!-- Game Results -->
       <section v-if="gameEnded" class="results-section">
         <div class="results-card">
-          <div class="result-status" :class="gameWon ? 'won' : 'completed'">
-            <span class="result-icon">{{ gameWon ? '🏆' : '✨' }}</span>
-            <h2>{{ gameWon ? 'EXCELLENT!' : 'GAME OVER!' }}</h2>
+          <div class="result-status">
+            <span class="result-icon">✨</span>
+            <h2>SESSION COMPLETE!</h2>
           </div>
 
           <div class="result-stats">
@@ -87,19 +100,8 @@
               <span class="stat-value">{{ cardsFlipped }}</span>
             </div>
             <div class="stat-item">
-              <span class="stat-title">AVERAGE</span>
-              <span class="stat-value">{{ (sessionPoints / cardsFlipped).toFixed(1) }}</span>
-            </div>
-          </div>
-
-          <div v-if="unlockedCards.length > 0" class="unlocked-cards-section">
-            <h3>NEW CARDS UNLOCKED!</h3>
-            <div class="unlocked-cards-list">
-              <div v-for="card in unlockedCards" :key="card.card_id" class="unlocked-card-item">
-                <span class="card-name">{{ card.name }}</span>
-                <span class="card-rarity" :class="'rarity-' + card.rarity">{{ card.rarity }}</span>
-                <span class="card-bonus">+{{ card.bonus }} pts</span>
-              </div>
+              <span class="stat-title">NEW CARDS DISCOVERED</span>
+              <span class="stat-value">{{ newCardsCount }}</span>
             </div>
           </div>
 
@@ -108,29 +110,10 @@
               <span>PLAY AGAIN</span>
               <span class="arrow">→</span>
             </button>
-            <router-link to="/profile" class="view-profile-btn">
-              <span>VIEW PROFILE</span>
+            <router-link to="/cards" class="view-collection-btn">
+              <span>VIEW COLLECTION</span>
               <span class="arrow">→</span>
             </router-link>
-          </div>
-        </div>
-      </section>
-
-      <!-- Leaderboard -->
-      <section class="leaderboard-section">
-        <h2 class="section-label">TOP PLAYERS</h2>
-        <div class="leaderboard-table">
-          <div class="leaderboard-header">
-            <span class="rank">RANK</span>
-            <span class="player">PLAYER</span>
-            <span class="points">TOTAL POINTS</span>
-            <span class="games">GAMES</span>
-          </div>
-          <div class="leaderboard-row" v-for="(player, idx) in topPlayers" :key="idx">
-            <span class="rank">{{ idx + 1 }}</span>
-            <span class="player">{{ player.name }}</span>
-            <span class="points">{{ player.points }}</span>
-            <span class="games">{{ player.games }}</span>
           </div>
         </div>
       </section>
@@ -140,6 +123,7 @@
 
 <script>
 import { gameService, cardService } from '@/services/api'
+import { useAuthStore } from '@/stores/authStore'
 
 export default {
   name: 'Play',
@@ -147,22 +131,14 @@ export default {
     return {
       gameStarted: false,
       gameEnded: false,
-      gameWon: false,
       isLoading: false,
       sessionPoints: 0,
       cardsFlipped: 0,
-      totalCards: 12,
-      pointMultiplier: 1,
-      gameCards: [],
-      flippedCardIds: [],
-      unlockedCards: [],
-      topPlayers: [
-        { name: 'SHADOW_STRIKER', points: 28500, games: 156, color: '#FFD60A' },
-        { name: 'QUANTUM_MASTER', points: 27200, games: 143, color: '#00d4ff' },
-        { name: 'NEON_PHOENIX', points: 26800, games: 138, color: '#FF6B35' },
-        { name: 'VOID_SENTINEL', points: 26400, games: 131, color: '#9D4EDD' },
-        { name: 'CRYSTAL_ECHO', points: 25800, games: 125, color: '#06D6A0' }
-      ]
+      newCardsCount: 0,
+      tableCards: [],
+      seenCardIds: [],
+      allGameCards: [],
+      authStore: useAuthStore()
     }
   },
   methods: {
@@ -172,107 +148,111 @@ export default {
       this.gameEnded = false
       this.sessionPoints = 0
       this.cardsFlipped = 0
-      this.pointMultiplier = 1
-      this.flippedCardIds = []
-      this.unlockedCards = []
+      this.newCardsCount = 0
+      this.seenCardIds = []
+      this.tableCards = []
       
       try {
-        // Fetch random cards from backend
-        const response = await cardService.getRandomCards(this.totalCards)
-        const randomCards = response.data.cards
-
-        // Initialize cards with actual data
-        this.gameCards = randomCards.map((card, i) => ({
-          id: card.id,
-          name: card.name,
-          rarity: card.rarity,
-          flipped: false,
-          revealed: false,
-          result: this.generateRandomPoints()
+        const response = await cardService.getAllCards()
+        this.allGameCards = response.data.map(card => ({
+          ...card,
+          points: this.generatePoints(card.rarity)
         }))
+        this.drawNewCards()
       } catch (err) {
-        console.error('Failed to fetch random cards:', err)
-        // Fallback to local generation
-        this.gameCards = Array.from({ length: this.totalCards }, (_, i) => ({
-          id: i + 1,
-          name: `Card ${i + 1}`,
-          rarity: 'common',
-          flipped: false,
-          revealed: false,
-          result: this.generateRandomPoints()
-        }))
+        console.error('Failed to fetch cards:', err)
+        this.gameStarted = false
       }
       
-      setTimeout(() => {
-        this.isLoading = false
-      }, 500)
+      this.isLoading = false
     },
-    
-    flipCard(index) {
-      if (this.gameCards[index].flipped || !this.gameStarted || this.gameEnded) return
+    drawNewCards() {
+      const drawn = []
+      for (let i = 0; i < 6; i++) {
+        const randomCard = this.allGameCards[Math.floor(Math.random() * this.allGameCards.length)]
+        const isDuplicate = this.seenCardIds.includes(randomCard.id)
+        
+        drawn.push({
+          ...randomCard,
+          flipped: false,
+          isDuplicate: isDuplicate,
+          points: this.generatePoints(randomCard.rarity),
+          elementColor: this.getElementColor(randomCard.element)
+        })
+      }
+      this.tableCards = drawn
+    },
+    flipTableCard(index) {
+      const card = this.tableCards[index]
+      if (card.flipped) return
       
-      const card = this.gameCards[index]
       card.flipped = true
+      this.sessionPoints += card.points
+      this.cardsFlipped += 1
       
-      // Delay reveal for animation
-      setTimeout(() => {
-        card.revealed = true
-        this.sessionPoints += card.result
-        this.cardsFlipped += 1
-        
-        // Track flipped card ID for backend
-        if (!this.flippedCardIds.includes(card.id)) {
-          this.flippedCardIds.push(card.id)
-        }
-        
-        // Increase multiplier every 3 cards
-        if (this.cardsFlipped % 3 === 0) {
-          this.pointMultiplier = 1 + (this.cardsFlipped / 3) * 0.25
-        }
-        
-        // Auto-end if all cards flipped
-        if (this.cardsFlipped === this.totalCards) {
-          setTimeout(() => this.endGame(), 1000)
-        }
-      }, 300)
+      if (!card.isDuplicate && !this.seenCardIds.includes(card.id)) {
+        this.seenCardIds.push(card.id)
+        this.newCardsCount += 1
+      }
     },
-    
-    generateRandomPoints() {
-      const outcomes = [-2, -1, 0, 5, 5, 5, 10, 10, 15, 20]
-      return outcomes[Math.floor(Math.random() * outcomes.length)]
+    generatePoints(rarity) {
+      const pointsByRarity = {
+        'common': [5, 5, 5, 7, 7],
+        'uncommon': [8, 8, 10, 10, 12],
+        'rare': [15, 15, 18, 20, 20],
+        'epic': [25, 25, 30, 30, 35],
+        'legendary': [50, 50, 60, 75, 100]
+      }
+      const rarity_lower = rarity.toLowerCase()
+      const options = pointsByRarity[rarity_lower] || pointsByRarity['common']
+      return options[Math.floor(Math.random() * options.length)]
     },
-    
+    getElementColor(element) {
+      const colors = {
+        'fire': '#FF6B35',
+        'water': '#00A8E8',
+        'nature': '#06D6A0',
+        'lightning': '#FFD60A',
+        'dark': '#9D4EDD',
+        'light': '#3A86FF'
+      }
+      return colors[element.toLowerCase()] || '#8B8B8B'
+    },
     endGame() {
       this.gameStarted = false
       this.gameEnded = true
-      this.gameWon = this.sessionPoints > 50
       this.saveGameResult()
     },
-    
     resetGame() {
       this.gameStarted = false
       this.gameEnded = false
-      this.gameWon = false
       this.sessionPoints = 0
       this.cardsFlipped = 0
-      this.pointMultiplier = 1
-      this.gameCards = []
-      this.flippedCardIds = []
-      this.unlockedCards = []
+      this.newCardsCount = 0
+      this.tableCards = []
+      this.seenCardIds = []
+      this.allGameCards = []
     },
-    
     saveGameResult() {
-      // Send game data with card IDs to backend
-      gameService.endGame({
+      const gameData = {
         points: this.sessionPoints,
         cards_flipped: this.cardsFlipped,
         game_mode: 'rng',
-        flipped_card_ids: this.flippedCardIds
-      }).then(response => {
+        flipped_card_ids: this.seenCardIds
+      }
+      console.log('Sending game data:', gameData)
+      gameService.endGame(gameData).then(response => {
         console.log('Game saved:', response.data)
-        // Store unlocked cards for display
-        if (response.data.game_result.unlocked_cards) {
-          this.unlockedCards = response.data.game_result.unlocked_cards
+        // Update auth store with the returned stats
+        if (response.data.stats) {
+          const stats = response.data.stats
+          this.authStore.user.totalGames = stats.total_games
+          this.authStore.user.totalPoints = stats.total_points
+          this.authStore.user.averageScore = stats.average_score
+          this.authStore.user.highestScore = stats.highest_score
+          this.authStore.user.experience = response.data.user.experience
+          this.authStore.user.level = response.data.user.level
+          this.authStore.user.cardsUnlockedCount = stats.cards_unlocked
         }
       }).catch(err => console.error('Failed to save game:', err))
     }
@@ -301,17 +281,17 @@ export default {
 
 .play-content {
   position: relative;
-  z-index: 0;
-  padding: 6rem 2rem !important;
+  z-index: 1;
+  padding: 4rem 2rem !important;
 }
 
 .arena-header {
   text-align: center;
-  margin-bottom: 4rem;
+  margin-bottom: 3rem;
 }
 
 .arena-title {
-  font-size: 3.5rem;
+  font-size: 3rem;
   font-weight: 900;
   text-transform: uppercase;
   background: linear-gradient(90deg, #00d4ff, #0066ff, #00d4ff);
@@ -324,11 +304,11 @@ export default {
 }
 
 .arena-subtitle {
-  font-size: 1.2rem;
+  font-size: 1rem;
   color: #88aaff;
-  margin-bottom: 1.5rem;
   text-transform: uppercase;
   letter-spacing: 1px;
+  margin-bottom: 1rem;
 }
 
 .accent-line {
@@ -338,22 +318,12 @@ export default {
   margin: 0 auto;
 }
 
-.section-label {
-  font-size: 1.5rem;
-  text-transform: uppercase;
-  color: #00d4ff;
-  letter-spacing: 2px;
-  margin-bottom: 2rem;
-  text-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
-}
-
-/* START GAME SECTION */
 .start-game-section {
-  margin: 4rem 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 300px;
+  min-height: 400px;
+  margin: 2rem 0;
 }
 
 .start-card {
@@ -362,36 +332,23 @@ export default {
   border-radius: 8px;
   padding: 3rem;
   text-align: center;
-  max-width: 600px;
+  max-width: 500px;
   box-shadow: 0 0 30px rgba(0, 212, 255, 0.15);
-  animation: slideIn 0.8s ease-out;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .start-card h2 {
-  font-size: 2.5rem;
-  text-transform: uppercase;
+  font-size: 2rem;
   background: linear-gradient(90deg, #00d4ff, #0066ff);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 1rem;
+  text-transform: uppercase;
   letter-spacing: 2px;
 }
 
 .start-card p {
   color: #88aaff;
-  font-size: 1.1rem;
   margin-bottom: 2rem;
   line-height: 1.6;
 }
@@ -409,14 +366,14 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
-  font-size: 1.1rem;
+  font-size: 1rem;
   transition: all 0.3s ease;
   box-shadow: 0 0 25px rgba(0, 212, 255, 0.3);
 }
 
 .start-btn:hover:not(:disabled) {
   transform: scale(1.05);
-  box-shadow: 0 0 50px #00d4ff, 0 0 80px rgba(0, 102, 255, 0.4);
+  box-shadow: 0 0 50px #00d4ff;
 }
 
 .start-btn:disabled {
@@ -424,9 +381,8 @@ export default {
   cursor: not-allowed;
 }
 
-/* GAME SECTION */
 .game-section {
-  margin-bottom: 4rem;
+  margin-bottom: 3rem;
 }
 
 .game-header {
@@ -434,21 +390,21 @@ export default {
   grid-template-columns: 1fr 1fr 1fr;
   gap: 2rem;
   margin-bottom: 3rem;
-  padding: 2rem;
-  background: linear-gradient(135deg, rgba(0, 50, 100, 0.2), rgba(0, 20, 50, 0.3));
+  padding: 1.5rem;
+  background: rgba(0, 50, 100, 0.2);
   border: 2px solid #00d4ff;
   border-radius: 8px;
 }
 
 .score-display,
-.cards-left,
-.multiplier {
+.cards-flipped-display,
+.new-cards-display {
   text-align: center;
 }
 
 .score-label,
-.left-label,
-.mult-label {
+.flipped-label,
+.new-label {
   display: block;
   color: #00d4ff;
   font-size: 0.85rem;
@@ -459,8 +415,8 @@ export default {
 }
 
 .score-value,
-.left-value,
-.mult-value {
+.flipped-value,
+.new-value {
   display: block;
   font-size: 2rem;
   font-weight: 900;
@@ -468,48 +424,38 @@ export default {
   text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
 }
 
-.cards-grid {
+.card-table {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.5rem;
-  margin-bottom: 2rem;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
+  margin-bottom: 3rem;
+  padding: 1.5rem;
+  background: rgba(0, 20, 50, 0.2);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 8px;
 }
 
-.card-item {
-  perspective: 1000px;
+.card-slot {
+  aspect-ratio: 3 / 4;
   cursor: pointer;
-  animation: cardAppear 0.6s ease-out forwards;
-  animation-delay: var(--card-delay, 0s);
-  opacity: 0;
 }
 
-@keyframes cardAppear {
-  from {
-    opacity: 0;
-    transform: scale(0.5);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.card-item:hover:not(.flipped) {
-  transform: scale(1.05);
+.table-card {
+  width: 100%;
+  height: 100%;
+  perspective: 1000px;
+  position: relative;
 }
 
 .card-inner {
   position: relative;
   width: 100%;
-  aspect-ratio: 2/3;
-  transition: transform 0.6s;
+  height: 100%;
+  transition: transform 0.6s ease;
   transform-style: preserve-3d;
 }
 
-.card-item.flipped .card-inner {
+.table-card.flipped .card-inner {
   transform: rotateY(180deg);
 }
 
@@ -524,92 +470,150 @@ export default {
   justify-content: center;
   flex-direction: column;
   border-radius: 8px;
-  font-weight: 900;
   border: 2px solid;
+  padding: 1rem;
+  box-sizing: border-box;
+  gap: 0.5rem;
 }
 
 .card-front {
-  background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 102, 255, 0.2));
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(0, 102, 255, 0.15));
   border-color: #00d4ff;
   color: #00d4ff;
-  text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+  font-size: 3rem;
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.2), inset 0 0 20px rgba(0, 212, 255, 0.05);
 }
 
 .card-back {
-  background: linear-gradient(135deg, rgba(100, 50, 200, 0.3), rgba(0, 150, 255, 0.3));
-  border-color: #0066ff;
+  background: linear-gradient(135deg, rgba(0, 100, 150, 0.3), rgba(50, 80, 180, 0.3));
+  border-color: var(--element-color, #0066ff);
   transform: rotateY(180deg);
+  box-shadow: 0 0 20px rgba(0, 102, 255, 0.2);
 }
 
-.card-emoji {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
+.card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  height: 100%;
+  text-align: center;
 }
 
-.card-number {
-  font-size: 1.2rem;
-  color: #88aaff;
+.card-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  line-height: 1.2;
 }
 
-.card-result {
-  font-size: 1.8rem;
+.card-rarity {
+  font-size: 0.7rem;
   font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 0.3rem 0.6rem;
+  border-radius: 3px;
 }
 
-.result-20,
-.result-15,
-.result-10,
-.result-5 {
+.rarity-common {
+  background: rgba(150, 150, 150, 0.8);
+  color: #fff;
+}
+
+.rarity-uncommon {
+  background: rgba(0, 200, 100, 0.8);
+  color: #000;
+}
+
+.rarity-rare {
+  background: rgba(0, 150, 255, 0.8);
+  color: #000;
+}
+
+.rarity-epic {
+  background: rgba(150, 50, 200, 0.8);
+  color: #fff;
+}
+
+.rarity-legendary {
+  background: linear-gradient(135deg, #FFD60A, #FF8C00);
+  color: #000;
+  font-weight: 900;
+  box-shadow: 0 0 15px #FFD60A;
+}
+
+.card-points {
+  font-size: 1.2rem;
+  font-weight: 900;
   color: #06D6A0;
-  text-shadow: 0 0 15px #06D6A0;
+  text-shadow: 0 0 10px #06D6A0;
+  margin-top: auto;
 }
 
-.result-0 {
+.duplicate-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
   color: #FFD60A;
-  text-shadow: 0 0 15px #FFD60A;
-}
-
-.result--1,
-.result--2 {
-  color: #FF6B35;
-  text-shadow: 0 0 15px #FF6B35;
+  text-shadow: 0 0 5px #FFD60A;
+  opacity: 0.9;
 }
 
 .game-actions {
-  text-align: center;
-  margin-top: 2rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin: 2rem 0;
+  flex-wrap: wrap;
 }
 
+.draw-btn,
 .end-game-btn {
-  padding: 1rem 2rem;
-  background: linear-gradient(90deg, #FF6B35, #FF4500);
-  color: #fff;
+  padding: 1rem 1.5rem;
   border: none;
+  border-radius: 4px;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 2px;
   cursor: pointer;
-  border-radius: 4px;
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-  font-size: 1rem;
+  gap: 0.5rem;
   transition: all 0.3s ease;
-  box-shadow: 0 0 25px rgba(255, 107, 53, 0.3);
+}
+
+.draw-btn {
+  background: linear-gradient(90deg, #00d4ff, #0066ff);
+  color: #000;
+  box-shadow: 0 0 25px rgba(0, 212, 255, 0.3);
+}
+
+.draw-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 50px rgba(0, 212, 255, 0.6);
+}
+
+.end-game-btn {
+  background: linear-gradient(90deg, #ff6666, #cc3333);
+  color: #fff;
+  box-shadow: 0 0 25px rgba(255, 100, 100, 0.3);
 }
 
 .end-game-btn:hover {
   transform: scale(1.05);
-  box-shadow: 0 0 50px #FF6B35, 0 0 80px rgba(255, 107, 53, 0.4);
+  box-shadow: 0 0 50px rgba(255, 100, 100, 0.6);
 }
 
-/* RESULTS SECTION */
 .results-section {
-  margin-bottom: 4rem;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 400px;
+  min-height: 500px;
+  margin: 2rem 0;
 }
 
 .results-card {
@@ -618,366 +622,120 @@ export default {
   border-radius: 8px;
   padding: 3rem;
   text-align: center;
-  max-width: 700px;
-  animation: slideIn 0.8s ease-out;
+  max-width: 600px;
+  box-shadow: 0 0 30px rgba(0, 212, 255, 0.15);
 }
 
 .result-status {
   margin-bottom: 2rem;
 }
 
-.result-status.won {
-  color: #FFD60A;
-}
-
-.result-status.completed {
-  color: #06D6A0;
-}
-
 .result-icon {
-  font-size: 4rem;
+  font-size: 3rem;
   display: block;
   margin-bottom: 1rem;
-  animation: bounce 1s ease-in-out infinite;
-}
-
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-15px); }
 }
 
 .result-status h2 {
-  font-size: 2.5rem;
+  font-size: 2.2rem;
+  background: linear-gradient(90deg, #00d4ff, #0066ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   text-transform: uppercase;
   letter-spacing: 2px;
-  text-shadow: 0 0 20px currentColor;
 }
 
 .result-stats {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1.5rem;
   margin-bottom: 2rem;
-  padding: 2rem;
+  padding: 1.5rem;
   background: rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
-  border: 1px solid #00d4ff;
+  border-radius: 4px;
 }
 
 .stat-item {
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
 }
 
 .stat-title {
   color: #00d4ff;
   font-size: 0.85rem;
   text-transform: uppercase;
-  letter-spacing: 2px;
-  margin-bottom: 0.5rem;
+  letter-spacing: 1px;
   font-weight: 700;
 }
 
 .stat-value {
-  font-size: 2rem;
-  font-weight: 900;
   color: #fff;
+  font-size: 1.8rem;
+  font-weight: 900;
   text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-}
-
-.unlocked-cards-section {
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, rgba(0, 212, 255, 0.05), rgba(0, 102, 255, 0.05));
-  border: 2px solid #06D6A0;
-  border-radius: 8px;
-}
-
-.unlocked-cards-section h3 {
-  color: #06D6A0;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  font-size: 1.2rem;
-  margin-bottom: 1rem;
-  text-shadow: 0 0 15px #06D6A0;
-}
-
-.unlocked-cards-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
-}
-
-.unlocked-card-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid #06D6A0;
-  border-radius: 4px;
-  animation: slide-in 0.5s ease-out;
-}
-
-.card-name {
-  color: #fff;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.card-rarity {
-  padding: 0.3rem 0.6rem;
-  border-radius: 3px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.rarity-common {
-  background: #A0A0A0;
-  color: #000;
-}
-
-.rarity-uncommon {
-  background: #06D6A0;
-  color: #000;
-}
-
-.rarity-rare {
-  background: #00A8E8;
-  color: #000;
-}
-
-.rarity-epic {
-  background: #9D4EDD;
-  color: #fff;
-}
-
-.rarity-legendary {
-  background: #FFD60A;
-  color: #000;
-}
-
-.card-bonus {
-  color: #06D6A0;
-  font-weight: 900;
-  font-size: 1.1rem;
-  text-shadow: 0 0 10px #06D6A0;
-}
-
-@keyframes slide-in {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
 }
 
 .result-actions {
   display: flex;
-  gap: 1.5rem;
+  gap: 1rem;
   justify-content: center;
   flex-wrap: wrap;
 }
 
 .play-again-btn,
-.view-profile-btn {
-  padding: 0.75rem 1.5rem;
-  border: 2px solid;
+.view-collection-btn {
+  padding: 1rem 1.5rem;
+  border: none;
+  border-radius: 4px;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 2px;
   cursor: pointer;
-  border-radius: 4px;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
   text-decoration: none;
+  transition: all 0.3s ease;
 }
 
 .play-again-btn {
   background: linear-gradient(90deg, #00d4ff, #0066ff);
   color: #000;
-  border-color: #00d4ff;
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+  box-shadow: 0 0 25px rgba(0, 212, 255, 0.3);
 }
 
 .play-again-btn:hover {
   transform: scale(1.05);
-  box-shadow: 0 0 40px #00d4ff, 0 0 60px rgba(0, 102, 255, 0.3);
+  box-shadow: 0 0 50px rgba(0, 212, 255, 0.6);
 }
 
-.view-profile-btn {
-  background: transparent;
-  color: #00d4ff;
-  border-color: #00d4ff;
-  box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+.view-collection-btn {
+  background: linear-gradient(90deg, #06D6A0, #00A8E8);
+  color: #000;
+  box-shadow: 0 0 25px rgba(0, 212, 255, 0.3);
 }
 
-.view-profile-btn:hover {
-  background: rgba(0, 212, 255, 0.1);
-  box-shadow: 0 0 30px rgba(0, 212, 255, 0.4);
-}
-
-.leaderboard-section {
-  margin-bottom: 2rem;
-}
-
-.leaderboard-section {
-  margin-bottom: 2rem;
-}
-
-.leaderboard-table {
-  background: linear-gradient(135deg, rgba(0, 50, 100, 0.1), rgba(0, 20, 50, 0.2));
-  border: 1px solid #00d4ff;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.leaderboard-header {
-  display: grid;
-  grid-template-columns: 50px 2fr 1fr 1fr;
-  gap: 1.5rem;
-  padding: 1.5rem;
-  background: rgba(0, 212, 255, 0.1);
-  border-bottom: 2px solid #00d4ff;
-  font-weight: 900;
-  text-transform: uppercase;
-  color: #00d4ff;
-  letter-spacing: 1px;
-  font-size: 0.9rem;
-  width: 100%;
-}
-
-.leaderboard-row {
-  display: grid;
-  grid-template-columns: 50px 2fr 1fr 1fr;
-  gap: 1.5rem;
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid rgba(0, 212, 255, 0.1);
-  align-items: center;
-  transition: all 0.3s ease;
-  width: 100%;
-}
-
-.leaderboard-row:hover {
-  background: rgba(0, 212, 255, 0.05);
-}
-
-.leaderboard-row:last-child {
-  border-bottom: none;
-}
-
-.rank {
-  color: #FFD60A;
-  font-weight: 900;
-  text-align: center;
-  font-size: 1.1rem;
-}
-
-.player {
-  color: #88aaff;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-size: 0.95rem;
-}
-
-.points {
-  font-weight: 900;
-  text-align: center;
-  font-size: 1rem;
-  color: #06D6A0;
-  text-shadow: 0 0 10px #06D6A0;
-}
-
-.games {
-  color: #FFD60A;
-  text-align: center;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-@media (max-width: 1024px) {
-  .arena-title {
-    font-size: 2.5rem;
-  }
-
-  .game-header {
-    grid-template-columns: 1fr;
-  }
-
-  .result-stats {
-    grid-template-columns: 1fr;
-  }
+.view-collection-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 50px rgba(0, 212, 255, 0.6);
 }
 
 @media (max-width: 768px) {
   .play-content {
     padding: 2rem 1rem !important;
   }
-
   .arena-title {
     font-size: 2rem;
   }
-
-  .cards-grid {
-    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  .card-table {
+    grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
   }
-
   .game-header {
     grid-template-columns: 1fr;
     gap: 1rem;
-    padding: 1.5rem;
-  }
-
-  .start-card {
-    padding: 2rem 1.5rem;
-  }
-
-  .start-card h2 {
-    font-size: 1.8rem;
-  }
-
-  .start-card p {
-    font-size: 1rem;
-  }
-
-  .results-card {
-    padding: 2rem 1.5rem;
-  }
-
-  .result-actions {
-    gap: 1rem;
-  }
-
-  .play-again-btn,
-  .view-profile-btn {
-    flex: 1;
-    min-width: 140px;
-  }
-
-  .leaderboard-header,
-  .leaderboard-row {
-    grid-template-columns: 40px 1fr 70px 70px;
-    gap: 0.75rem;
-    font-size: 0.85rem;
-  }
-
-  .leaderboard-header {
-    padding: 1rem;
-  }
-
-  .leaderboard-row {
-    padding: 1rem;
   }
 }
 </style>

@@ -37,69 +37,102 @@ class GameController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
+        \Log::info('Game end request', [
+            'user_id' => $user->id,
+            'request_data' => $request->all()
+        ]);
+
         $validated = $request->validate([
             'points' => 'required|integer|min:0',
             'cards_flipped' => 'required|integer|min:0|max:12',
-            'game_mode' => 'string|default:rng',
+            'game_mode' => 'nullable|string',
             'flipped_card_ids' => 'nullable|array',
-            'flipped_card_ids.*' => 'integer|exists:cards,id'
+            'flipped_card_ids.*' => 'integer'
         ]);
 
-        $totalPoints = $validated['points'];
-        $unlockedCards = [];
+        // Set default game_mode
+        $validated['game_mode'] = $validated['game_mode'] ?? 'rng';
 
-        // Process card unlocks if card IDs were provided
-        if (!empty($validated['flipped_card_ids'])) {
-            foreach ($validated['flipped_card_ids'] as $cardId) {
-                $card = \App\Models\Card::find($cardId);
-                if ($card) {
-                    // Check if card already exists in user_cards (dupe detection)
-                    $existingCard = \App\Models\UserCard::where('user_id', $user->id)
-                        ->where('card_id', $cardId)
-                        ->first();
-
-                    if (!$existingCard) {
-                        // New card unlock - calculate rarity bonus
-                        $rarityBonus = $this->calculateRarityBonus($card->rarity);
-                        $totalPoints += $rarityBonus;
-
-                        // Save new unlock
-                        \App\Models\UserCard::create([
-                            'user_id' => $user->id,
-                            'card_id' => $cardId,
-                            'quantity' => 1,
-                            'unlocked_at' => now()
-                        ]);
-
-                        $unlockedCards[] = [
-                            'card_id' => $cardId,
-                            'name' => $card->name,
-                            'rarity' => $card->rarity,
-                            'bonus' => $rarityBonus
-                        ];
-                    } else {
-                        // Dupe - increment quantity but no bonus points
-                        $existingCard->increment('quantity');
-                    }
-                }
-            }
-        }
+        \Log::info('Validation passed', [
+            'validated' => $validated
+        ]);
 
         // Update user's total experience/points
-        $user->increment('experience', $totalPoints);
+        $user->increment('experience', $validated['points']);
 
         // Calculate level based on experience (every 500 points = 1 level)
         $user->level = (int) ceil($user->experience / 500);
         $user->save();
 
+        \Log::info('User updated', [
+            'user_id' => $user->id,
+            'experience' => $user->experience,
+            'level' => $user->level
+        ]);
+
+        // Mark flipped cards as unlocked (seen)
+        $cardsUnlocked = 0;
+        if (isset($validated['flipped_card_ids']) && is_array($validated['flipped_card_ids'])) {
+            \Log::info('Unlocking cards', [
+                'count' => count($validated['flipped_card_ids']),
+                'card_ids' => $validated['flipped_card_ids']
+            ]);
+            
+            foreach ($validated['flipped_card_ids'] as $cardId) {
+                try {
+                    \App\Models\UserCard::updateOrCreate(
+                        [
+                            'user_id' => $user->id,
+                            'card_id' => (int) $cardId
+                        ],
+                        [
+                            'quantity' => 1,
+                            'unlocked_at' => now()
+                        ]
+                    );
+                    $cardsUnlocked++;
+                    \Log::info('Card unlocked', [
+                        'user_id' => $user->id,
+                        'card_id' => $cardId
+                    ]);
+                } catch (\Exception $e) {
+                    // Log error but don't fail the entire game save
+                    \Log::error('Failed to unlock card: ' . $e->getMessage(), [
+                        'user_id' => $user->id,
+                        'card_id' => $cardId,
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                }
+            }
+        } else {
+            \Log::warning('No cards to unlock', [
+                'user_id' => $user->id,
+                'flipped_card_ids' => $validated['flipped_card_ids'] ?? 'not set'
+            ]);
+        }
+
+        \Log::info('Cards unlocked', [
+            'total' => $cardsUnlocked
+        ]);
+
         // Log game record for history/leaderboard
         \App\Models\GameRecord::create([
             'user_id' => $user->id,
-            'points' => $totalPoints,
+            'points' => $validated['points'],
             'cards_flipped' => $validated['cards_flipped'],
             'game_mode' => $validated['game_mode'],
             'date' => now()
         ]);
+
+        // Refresh user to get latest data
+        $user->refresh();
+        
+        // Get updated stats
+        $gameRecords = $user->gameRecords;
+        $totalGames = $gameRecords->count();
+        $averageScore = $totalGames > 0 ? round($gameRecords->avg('points'), 2) : 0;
+        $highestScore = $totalGames > 0 ? $gameRecords->max('points') : 0;
+        $cardsUnlocked = \App\Models\UserCard::where('user_id', $user->id)->count();
 
         return response()->json([
             'status' => 'success',
@@ -110,18 +143,23 @@ class GameController extends Controller
                 'experience' => $user->experience,
                 'level' => $user->level
             ],
+            'stats' => [
+                'total_games' => $totalGames,
+                'total_points' => $user->experience,
+                'average_score' => $averageScore,
+                'highest_score' => $highestScore,
+                'cards_unlocked' => $cardsUnlocked
+            ],
             'game_result' => [
                 'points' => $validated['points'],
                 'cards_flipped' => $validated['cards_flipped'],
-                'total_points' => $totalPoints,
-                'unlocked_cards' => $unlockedCards,
                 'game_mode' => $validated['game_mode']
             ]
         ]);
     }
 
     /**
-     * Get user's card collection with unlock status
+     * Get user's card collection with unlock status (based on cards seen in games)
      */
     public function collection(Request $request)
     {
@@ -131,7 +169,7 @@ class GameController extends Controller
         // Get all cards
         $allCards = \App\Models\Card::all();
         
-        // Get user's unlocked cards
+        // Get user's unlocked cards (cards they've seen)
         $userCards = \App\Models\UserCard::where('user_id', $user->id)
             ->pluck('card_id')
             ->toArray();
@@ -139,21 +177,14 @@ class GameController extends Controller
         // Map cards with unlock status
         $collection = $allCards->map(function ($card) use ($userCards) {
             $isUnlocked = in_array($card->id, $userCards);
-            $userCard = $isUnlocked ? \App\Models\UserCard::where('user_id', auth()->id())
-                ->where('card_id', $card->id)
-                ->first() : null;
 
             return [
                 'id' => $card->id,
                 'name' => $card->name,
-                'description' => $card->description,
-                'power' => $card->power,
-                'cost' => $card->cost,
                 'element' => $card->element,
                 'rarity' => $card->rarity,
                 'image_url' => $card->image_url,
-                'unlocked' => $isUnlocked,
-                'unlocked_at' => $userCard?->unlocked_at
+                'unlocked' => $isUnlocked
             ];
         });
 
@@ -163,22 +194,6 @@ class GameController extends Controller
             'unlocked_count' => count($userCards),
             'collection' => $collection
         ]);
-    }
-
-    /**
-     * Calculate rarity-based unlock bonus points
-     */
-    private function calculateRarityBonus(string $rarity): int
-    {
-        $rarityBonuses = [
-            'common' => 5,
-            'uncommon' => 15,
-            'rare' => 30,
-            'epic' => 50,
-            'legendary' => 100
-        ];
-
-        return $rarityBonuses[strtolower($rarity)] ?? 0;
     }
 
     /**
@@ -196,6 +211,9 @@ class GameController extends Controller
         $averageScore = $totalGames > 0 ? round($gameRecords->avg('points'), 2) : 0;
         $highestScore = $totalGames > 0 ? $gameRecords->max('points') : 0;
 
+        // Get cards unlocked count
+        $cardsUnlocked = \App\Models\UserCard::where('user_id', $user->id)->count();
+
         return response()->json([
             'status' => 'success',
             'stats' => [
@@ -204,8 +222,29 @@ class GameController extends Controller
                 'average_score' => $averageScore,
                 'highest_score' => $highestScore,
                 'level' => $user->level,
-                'experience' => $user->experience
+                'experience' => $user->experience,
+                'cards_unlocked' => $cardsUnlocked
             ]
+        ]);
+    }
+
+    /**
+     * Get global leaderboard (excludes admin users)
+     */
+    public function leaderboard(Request $request)
+    {
+        $limit = $request->query('limit', 10);
+
+        // Get top players by experience (excluding admins)
+        $leaderboard = \App\Models\User::where('role', '!=', 'admin')
+            ->orderBy('experience', 'desc')
+            ->limit($limit)
+            ->select('id', 'name', 'level', 'experience')
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'leaderboard' => $leaderboard
         ]);
     }
 }

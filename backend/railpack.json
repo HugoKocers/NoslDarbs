@@ -3,5 +3,23 @@
   "provider": "php",
   "packages": {
     "php": "8.3"
-  }
+  },
+  "buildAptPackages": [
+    "bison",
+    "re2c",
+    "libxml2-dev",
+    "libsqlite3-dev",
+    "libreadline-dev",
+    "libcurl4-openssl-dev",
+    "libonig-dev",
+    "libpng-dev",
+    "libjpeg-dev",
+    "libfreetype6-dev",
+    "libgd-dev",
+    "libzip-dev",
+    "libpq-dev",
+    "libicu-dev",
+    "libssl-dev",
+    "zlib1g-dev"
+  ]
 }

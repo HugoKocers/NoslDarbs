@@ -28,6 +28,8 @@ return [
         'http://127.0.0.1:5174',
         'http://127.0.0.1:5175',
         'http://127.0.0.1:5176',
+        'https://accurate-radiance-production-37d5.up.railway.app',
+    
     ],
 
     'allowed_origins_patterns' => [],

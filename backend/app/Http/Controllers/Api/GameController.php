@@ -44,7 +44,7 @@ class GameController extends Controller
 
         $validated = $request->validate([
             'points' => 'required|integer|min:0',
-            'cards_flipped' => 'required|integer|min:0|max:12',
+            'cards_flipped' => 'required|integer|min:0',
             'game_mode' => 'nullable|string',
             'flipped_card_ids' => 'nullable|array',
             'flipped_card_ids.*' => 'integer'

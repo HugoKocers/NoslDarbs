@@ -154,6 +154,7 @@ export default {
       
       try {
         const response = await cardService.getAllCards()
+        console.log('Cards response:', response.data)
         this.allGameCards = response.data.map(card => ({
           ...card,
           points: this.generatePoints(card.rarity)

@@ -14,7 +14,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(CardSeeder::class);
 
-        \App\Models\User::factory()->create([
+        \App\Models\User::updateOrCreate([
         'name' => 'Test Player',
         'email' => 'test@example.com',
         'password' => bcrypt('password123'),

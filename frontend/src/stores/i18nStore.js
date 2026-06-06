@@ -9,6 +9,7 @@ export const useI18nStore = defineStore('i18n', () => {
       // Navigation
       home: 'Home',
       cards: 'Cards',
+      leaderboard: 'Leaderboard',
       play: 'Play',
       profile: 'Profile',
       admin: 'Admin',
@@ -106,6 +107,7 @@ export const useI18nStore = defineStore('i18n', () => {
       // Navigation
       home: 'Sākums',
       cards: 'Kārtis',
+      leaderboard: 'Līderu saraksts',
       play: 'Spēlēt',
       profile: 'Profils',
       admin: 'Admins',

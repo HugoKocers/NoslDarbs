@@ -51,7 +51,14 @@
                 <option value="Dark">Dark</option>
                 <option value="Light">Light</option>
               </select>
-              <input v-model="cardForm.rarity" type="text" placeholder="Rarity (Common, Rare, Legendary)" required class="form-input" />
+              <input v-model.number="cardForm.power" type="number" min="1" placeholder="Power" required class="form-input" />
+            </div>
+            <div class="form-row">
+              <input v-model.number="cardForm.cost" type="number" min="0" placeholder="Cost" class="form-input" />
+              <input v-model="cardForm.rarity" type="text" placeholder="Rarity (Common, Uncommon, Rare, Epic, Legendary)" required class="form-input" />
+            </div>
+            <div class="form-row">
+              <input v-model="cardForm.image_url" type="url" placeholder="Image URL (optional)" class="form-input" />
             </div>
             <textarea v-model="cardForm.description" placeholder="Card Description" class="form-input" style="resize: vertical;"></textarea>
             <div class="form-actions">
@@ -151,7 +158,10 @@ const cardForm = ref({
   name: '',
   element: '',
   rarity: '',
-  description: ''
+  description: '',
+  power: 1,
+  cost: 0,
+  image_url: ''
 })
 
 const cards = ref([])
@@ -197,7 +207,13 @@ const saveCard = async () => {
       name: cardForm.value.name,
       element: cardForm.value.element,
       rarity: cardForm.value.rarity,
-      description: cardForm.value.description
+      description: cardForm.value.description,
+      power: cardForm.value.power,
+      cost: cardForm.value.cost
+    }
+
+    if (cardForm.value.image_url) {
+      payload.image_url = cardForm.value.image_url
     }
 
     if (editingCard.value) {

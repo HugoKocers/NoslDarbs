@@ -32,12 +32,12 @@
             aria-label="Filter by element"
           >
             <option value="">All Elements</option>
-            <option value="Fire">Fire</option>
-            <option value="Water">Water</option>
-            <option value="Nature">Nature</option>
-            <option value="Lightning">Lightning</option>
-            <option value="Dark">Dark</option>
-            <option value="Light">Light</option>
+            <option value="fire">Fire</option>
+            <option value="water">Water</option>
+            <option value="nature">Nature</option>
+            <option value="lightning">Lightning</option>
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
           </select>
         </div>
 
@@ -51,10 +51,11 @@
             aria-label="Filter by rarity"
           >
             <option value="">All Rarities</option>
-            <option value="Common">Common</option>
-            <option value="Uncommon">Uncommon</option>
-            <option value="Rare">Rare</option>
-            <option value="Legendary">Legendary</option>
+            <option value="common">Common</option>
+            <option value="uncommon">Uncommon</option>
+            <option value="rare">Rare</option>
+            <option value="epic">Epic</option>
+            <option value="legendary">Legendary</option>
           </select>
         </div>
 
@@ -174,16 +175,25 @@ export default {
       return this.search || this.filterElement || this.filterRarity
     },
     filteredCards() {
+      const searchTerm = this.search.trim().toLowerCase()
       let filtered = this.cards.filter(card => {
+        const cardName = card.name?.toLowerCase() || ''
+        const cardDescription = (card.description || '').toLowerCase()
+        const cardElement = card.element?.toLowerCase() || ''
+        const cardRarity = card.rarity?.toLowerCase() || ''
+
         // Search filter
-        const matchesSearch = card.name.toLowerCase().includes(this.search.toLowerCase()) ||
-                            card.description.toLowerCase().includes(this.search.toLowerCase())
+        const matchesSearch = !searchTerm ||
+          cardName.includes(searchTerm) ||
+          cardDescription.includes(searchTerm) ||
+          cardElement.includes(searchTerm) ||
+          cardRarity.includes(searchTerm)
         
         // Element filter
-        const matchesElement = !this.filterElement || card.element === this.filterElement
+        const matchesElement = !this.filterElement || cardElement === this.filterElement.toLowerCase()
         
         // Rarity filter
-        const matchesRarity = !this.filterRarity || card.rarity === this.filterRarity
+        const matchesRarity = !this.filterRarity || cardRarity === this.filterRarity.toLowerCase()
         
         return matchesSearch && matchesElement && matchesRarity
       })

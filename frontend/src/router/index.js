@@ -25,6 +25,11 @@ const routes = [
     component: () => import('../views/Cards.vue')
   },
   {
+    path: '/leaderboard',
+    name: 'Leaderboard',
+    component: () => import('../views/Leaderboard.vue')
+  },
+  {
     path: '/play',
     name: 'Play',
     component: () => import('../views/Play.vue'),

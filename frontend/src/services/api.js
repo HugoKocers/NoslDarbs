@@ -93,6 +93,9 @@ export const gameService = {
   },
   getCollection() {
     return apiClient.get('/game/collection')
+  },
+  getLeaderboard(limit = 10) {
+    return apiClient.get(`/leaderboard?limit=${limit}`)
   }
 }
 

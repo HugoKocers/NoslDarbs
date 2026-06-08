@@ -166,9 +166,17 @@ class GameController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        // Get all cards
-        $allCards = \App\Models\Card::all();
-        
+        // Get all cards and remove duplicate definitions if the database contains repeated card rows
+        $allCards = \App\Models\Card::select('id', 'name', 'element', 'rarity', 'image_url')
+            ->get()
+            ->unique(function ($card) {
+                return strtolower(trim($card->name))
+                    . '|' . strtolower(trim($card->element))
+                    . '|' . strtolower(trim($card->rarity))
+                    . '|' . trim((string) $card->image_url);
+            })
+            ->values();
+
         // Get user's unlocked cards (cards they've seen)
         $userCards = \App\Models\UserCard::where('user_id', $user->id)
             ->pluck('card_id')

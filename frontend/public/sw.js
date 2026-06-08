@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cardquest-v1'
+const CACHE_NAME = 'cardquest-v2'
 const START_URL = '/'
 const STATIC_ASSETS = [
   '/',
@@ -6,7 +6,7 @@ const STATIC_ASSETS = [
   '/manifest.json'
 ]
 
-// Install event - cache essential assets
+// Install event - cache essential assets and prepare for fast loading
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -30,55 +30,71 @@ self.addEventListener('activate', (event) => {
   )
 })
 
-// Fetch event - serve from cache, fall back to network
+function networkFirst(request) {
+  return fetch(request)
+    .then((response) => {
+      if (!response || response.status !== 200 || response.type === 'error') {
+        return caches.match(request)
+      }
+
+      const responseToCache = response.clone()
+      caches.open(CACHE_NAME).then((cache) => {
+        cache.put(request, responseToCache)
+      })
+
+      return response
+    })
+    .catch(() => caches.match(request).then((cached) => cached || caches.match(START_URL)))
+}
+
+function cacheFirst(request) {
+  return caches.match(request).then((cached) => {
+    if (cached) {
+      return cached
+    }
+
+    return fetch(request).then((response) => {
+      if (!response || response.status !== 200 || response.type === 'error') {
+        return response
+      }
+
+      const responseToCache = response.clone()
+      caches.open(CACHE_NAME).then((cache) => {
+        cache.put(request, responseToCache)
+      })
+
+      return response
+    }).catch(() => caches.match(START_URL))
+  })
+}
+
+// Fetch event - serve index from network first, cache other static assets
 self.addEventListener('fetch', (event) => {
   const { request } = event
   const url = new URL(request.url)
 
-  // Skip non-GET requests
   if (request.method !== 'GET') {
     return
   }
 
-  // Skip API calls (let them go to network)
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(request).catch(() => {
         return new Response(
           JSON.stringify({ error: 'Offline - API not available' }),
-          { status: 503, contentType: 'application/json' }
+          { status: 503, headers: { 'Content-Type': 'application/json' } }
         )
       })
     )
     return
   }
 
-  // Cache-first strategy for static assets
-  event.respondWith(
-    caches.match(request).then((response) => {
-      if (response) {
-        return response
-      }
+  if (url.pathname === '/' || url.pathname === '/index.html') {
+    event.respondWith(networkFirst(request))
+    return
+  }
 
-      return fetch(request).then((response) => {
-        // Don't cache non-successful responses
-        if (!response || response.status !== 200 || response.type === 'error') {
-          return response
-        }
-
-        // Clone the response
-        const responseToCache = response.clone()
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(request, responseToCache)
-        })
-
-        return response
-      }).catch(() => {
-        // Return offline page or cached fallback
-        return caches.match(START_URL)
-      })
-    })
-  )
+  event.respondWith(cacheFirst(request))
 })
 
 // Handle background sync (for future implementation)

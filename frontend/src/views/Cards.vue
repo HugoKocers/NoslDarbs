@@ -241,12 +241,24 @@ export default {
       this.filterRarity = ''
       this.sortBy = 'name'
     },
+    dedupeCollection(cards) {
+      const seen = new Set()
+      return cards.filter((card) => {
+        const signature = `${card.name?.trim().toLowerCase() || ''}|${card.element?.trim().toLowerCase() || ''}|${card.rarity?.trim().toLowerCase() || ''}|${card.image_url || ''}`
+        if (seen.has(signature)) {
+          return false
+        }
+        seen.add(signature)
+        return true
+      })
+    },
     async fetchCollection() {
       try {
         this.loading = true
         this.error = null
         const response = await gameService.getCollection()
-        this.cards = response.data.collection || []
+        const collection = response.data.collection || []
+        this.cards = this.dedupeCollection(collection)
       } catch (err) {
         this.error = 'Failed to load collection: ' + (err.response?.data?.message || err.message)
         console.error(err)

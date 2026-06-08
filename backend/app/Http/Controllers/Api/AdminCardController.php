@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Card;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class AdminCardController extends Controller
 {
@@ -26,7 +27,12 @@ class AdminCardController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('cards', 'name'),
+            ],
             'description' => 'nullable|string',
             'power' => 'required|integer|min:1|max:100',
             'cost' => 'nullable|integer|min:0',
@@ -61,7 +67,12 @@ class AdminCardController extends Controller
     public function update(Request $request, Card $card)
     {
         $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
+            'name' => [
+                'sometimes',
+                'string',
+                'max:255',
+                Rule::unique('cards', 'name')->ignore($card->id),
+            ],
             'description' => 'nullable|string',
             'power' => 'sometimes|integer|min:1|max:100',
             'cost' => 'nullable|integer|min:0',

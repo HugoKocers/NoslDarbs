@@ -167,12 +167,25 @@ const cardForm = ref({
 const cards = ref([])
 const users = ref([])
 
-// Fetch all cards
+// Utility: normalize strings (capitalize first letter, lowercase rest)
+const normalize = (s) => {
+  if (!s && s !== 0) return s
+  const str = String(s).trim()
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
+}
+
+// Fetch all cards (admin view should not trigger image loads; strip image_url)
 const fetchCards = async () => {
   try {
     loading.value = true
     const response = await api.get('/admin/cards')
-    cards.value = response.data.data
+    // sanitize cards: normalize element/rarity and remove image_url to avoid unnecessary image fetches
+    cards.value = (response.data.data || []).map((c) => ({
+      ...c,
+      element: normalize(c.element),
+      rarity: normalize(c.rarity),
+      image_url: ''
+    }))
     error.value = null
   } catch (err) {
     error.value = 'Failed to load cards'
@@ -203,17 +216,21 @@ const saveCard = async () => {
     loading.value = true
     error.value = null
 
+    // Normalize values to match backend validation (case-sensitive `in:` rules)
+    const normalizedElement = normalize(cardForm.value.element)
+    const normalizedRarity = normalize(cardForm.value.rarity)
+
     const payload = {
-      name: cardForm.value.name,
-      element: cardForm.value.element,
-      rarity: cardForm.value.rarity,
+      name: String(cardForm.value.name || '').trim(),
+      element: normalizedElement,
+      rarity: normalizedRarity,
       description: cardForm.value.description,
       power: cardForm.value.power,
       cost: cardForm.value.cost
     }
 
     if (cardForm.value.image_url) {
-      payload.image_url = cardForm.value.image_url
+      payload.image_url = String(cardForm.value.image_url).trim()
     }
 
     if (editingCard.value) {
@@ -227,7 +244,18 @@ const saveCard = async () => {
     await fetchCards()
     resetCardForm()
   } catch (err) {
-    error.value = err.response?.data?.message || 'Failed to save card'
+    // Surface validation errors if present (Laravel returns 422 with `errors`)
+    if (err.response?.status === 422) {
+      const serverErrors = err.response.data?.errors
+      if (serverErrors) {
+        // join field errors into a single message
+        error.value = Object.entries(serverErrors).map(([k, v]) => `${k}: ${v.join(', ')}`).join(' | ')
+      } else {
+        error.value = err.response.data?.message || 'Validation error'
+      }
+    } else {
+      error.value = err.response?.data?.message || 'Failed to save card'
+    }
     console.error(err)
   } finally {
     loading.value = false
